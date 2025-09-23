@@ -3,13 +3,13 @@ import { Tabs, Button, Space, Typography, Alert, Modal, message, Spin } from 'an
 import { SaveOutlined, CopyOutlined, PlayCircleOutlined, CheckCircleOutlined, WarningOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { rulesApi } from '../services/rulesApi';
-import ConditionBuilder from '../features/rules/components/ConditionBuilder';
 import ImprovedConditionBuilder from '../features/rules/components/ImprovedConditionBuilder';
 import ContentConfiguration from '../features/rules/components/content/ContentConfiguration';
 import FallbackConfiguration from '../features/rules/components/fallback/FallbackConfiguration';
 import PreviewSection from '../features/rules/components/PreviewSection';
 import ImprovedTabNavigation from '../components/ImprovedTabNavigation';
 import ContextualHelp from '../components/ContextualHelp';
+import { getAttributesByGroup } from '../features/rules/attributeDefinitions';
 import type { AudienceCondition, ValidationResult, ContentConfiguration as ContentConfigurationType, ContentValidationResult, FallbackConfiguration as FallbackConfigurationType, FallbackValidationResult } from '../features/rules/types';
 import type { Rule } from '../lib/mockData';
 
@@ -46,7 +46,7 @@ const RuleEditor: React.FC = () => {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [loading, setLoading] = useState(!isNewRule);
   const [saving, setSaving] = useState(false);
-  const [useImprovedUX, setUseImprovedUX] = useState(true); // Toggle for new UX
+  const [useImprovedUX] = useState(true); // Always use improved UX
   const [audienceValidation, setAudienceValidation] = useState<ValidationResult>({ isValid: false, errors: [], warnings: [] });
   const [contentValidation, setContentValidation] = useState<ContentValidationResult>({ isValid: false, errors: [], warnings: [], hasContent: false, priorityConflicts: [] });
   const [fallbackValidation, setFallbackValidation] = useState<FallbackValidationResult>({ isValid: false, errors: [], warnings: [], hasFallbacks: false, scenarioErrors: { ineligible_audience: [], empty_supply: [] } });
@@ -203,6 +203,75 @@ const RuleEditor: React.FC = () => {
     setPendingNavigation(null);
   };
 
+  // Generate audience summary from audience conditions
+  const generateAudienceSummary = (audience: AudienceCondition | null): string => {
+    if (!audience || !audience.rootNode || !audience.rootNode.children) {
+      return '';
+    }
+
+    const generateConditionText = (node: any): string => {
+      if (node.type === 'condition') {
+        // Get attribute info
+        const allAttributes = [...getAttributesByGroup('customer'), ...getAttributesByGroup('activity'), ...getAttributesByGroup('custom')];
+        const attribute = allAttributes.find(attr => attr.id === node.attributeId);
+        if (!attribute) return '';
+
+        const attributeName = attribute.label;
+        let operatorText = '';
+        let valueText = '';
+
+        // Convert comparison operators to readable text
+        switch (node.comparison) {
+          case 'equals':
+            operatorText = '=';
+            break;
+          case 'not_equals':
+            operatorText = '≠';
+            break;
+          case 'greater_than':
+            operatorText = '>';
+            break;
+          case 'less_than':
+            operatorText = '<';
+            break;
+          case 'contains':
+            operatorText = 'contains';
+            break;
+          case 'in':
+            operatorText = 'is one of';
+            break;
+          case 'not_in':
+            operatorText = 'is not one of';
+            break;
+          default:
+            operatorText = node.comparison;
+        }
+
+        // Format value based on type
+        if (Array.isArray(node.value)) {
+          valueText = `[${node.value.join(', ')}]`;
+        } else if (typeof node.value === 'boolean') {
+          valueText = node.value ? 'Yes' : 'No';
+        } else {
+          valueText = String(node.value);
+        }
+
+        return `${attributeName} ${operatorText} ${valueText}`;
+      } else if (node.type === 'group' && node.children && node.children.length > 0) {
+        const childTexts = node.children.map(generateConditionText).filter(Boolean);
+        if (childTexts.length === 0) return '';
+        if (childTexts.length === 1) return childTexts[0];
+        return `(${childTexts.join(` ${node.operator || 'AND'} `)})`;
+      }
+      return '';
+    };
+
+    const conditions = audience.rootNode.children.map(generateConditionText).filter(Boolean);
+    if (conditions.length === 0) return '';
+    if (conditions.length === 1) return conditions[0];
+    return conditions.join(` ${audience.rootNode.operator || 'AND'} `);
+  };
+
   // Handle save draft
   const handleSaveDraft = async () => {
     setSaving(true);
@@ -210,7 +279,7 @@ const RuleEditor: React.FC = () => {
       const saveData = {
         name: ruleData.name,
         status: 'Draft' as const,
-        audienceSummary: '', // Will be generated from audience conditions
+        audienceSummary: generateAudienceSummary(ruleData.audience),
         contentSources: [], // Will be generated from content config
         audience: ruleData.audience,
         content: ruleData.content,
@@ -321,6 +390,30 @@ const RuleEditor: React.FC = () => {
       return;
     }
 
+    // Recursive function to convert flexible conditions to ConditionNode format
+    const convertToConditionNode = (flexCondition: any): any => {
+      if (flexCondition.type === 'condition') {
+        return {
+          id: flexCondition.id,
+          type: 'condition',
+          attributeId: flexCondition.attributeId,
+          comparison: flexCondition.operator,
+          value: flexCondition.value,
+          depth: 1,
+          isValid: !!(flexCondition.attributeId && flexCondition.operator && flexCondition.value !== '')
+        };
+      } else if (flexCondition.type === 'group') {
+        return {
+          id: flexCondition.id,
+          type: 'group',
+          operator: flexCondition.groupOperator || 'AND',
+          children: (flexCondition.children || []).map(convertToConditionNode),
+          depth: 1,
+          isValid: flexCondition.children && flexCondition.children.length > 0
+        };
+      }
+    };
+
     // Create audience condition from flexible conditions
     const audienceCondition: AudienceCondition = {
       id: `condition_${Date.now()}`,
@@ -329,17 +422,9 @@ const RuleEditor: React.FC = () => {
         id: `node_${Date.now()}`,
         type: 'group',
         operator: 'AND', // Default root operator
-        children: conditions.map((condition) => ({
-          id: condition.id,
-          type: 'condition',
-          attributeId: condition.attributeId,
-          comparison: condition.operator,
-          value: condition.value,
-          depth: 1,
-          isValid: !!(condition.attributeId && condition.operator && condition.value !== '')
-        })),
+        children: conditions.map(convertToConditionNode),
         depth: 0,
-        isValid: conditions.every(c => c.attributeId && c.operator && c.value !== '')
+        isValid: conditions.length > 0
       },
       lastModified: new Date()
     };
@@ -347,11 +432,22 @@ const RuleEditor: React.FC = () => {
     setRuleData(prev => ({ ...prev, audience: audienceCondition }));
     setHasUnsavedChanges(true);
     
-    // Update validation state
-    const isValid = conditions.length > 0 && conditions.every(c => c.attributeId && c.operator && c.value !== '');
+    // Update validation state - more sophisticated validation for nested structures
+    const validateRecursive = (items: any[]): boolean => {
+      return items.every(item => {
+        if (item.type === 'condition') {
+          return item.attributeId && item.operator && item.value !== '';
+        } else if (item.type === 'group') {
+          return item.children && item.children.length > 0 && validateRecursive(item.children);
+        }
+        return false;
+      });
+    };
+
+    const isValid = conditions.length > 0 && validateRecursive(conditions);
     setAudienceValidation({
       isValid,
-      errors: isValid ? [] : ['Please complete all condition fields'],
+      errors: isValid ? [] : ['Please complete all condition fields and ensure groups are not empty'],
       warnings: []
     });
   };
@@ -364,33 +460,36 @@ const RuleEditor: React.FC = () => {
       return [];
     }
 
-    // Extract conditions from the tree structure and flatten them
-    const extractConditions = (node: any, isFirst: boolean = true): any[] => {
-      console.log('Extracting conditions from node:', node);
+    // Convert ConditionNode to FlexibleCondition format (preserving nested structure)
+    const convertNode = (node: any, isFirst: boolean = true): any => {
       if (node.type === 'condition') {
-        const condition = {
+        return {
           id: node.id,
+          type: 'condition',
           attributeId: node.attributeId,
           operator: node.comparison,
           value: node.value,
-          logicalOperator: isFirst ? undefined : node.operator || 'AND'
+          logicalOperator: isFirst ? undefined : 'AND' // Default chaining operator
         };
-        console.log('Created condition:', condition);
-        return [condition];
-      } else if (node.type === 'group' && node.children) {
-        // Flatten all conditions from the group
-        const conditions: any[] = [];
-        node.children.forEach((child: any) => {
-          const childConditions = extractConditions(child, conditions.length === 0);
-          conditions.push(...childConditions);
-        });
-        console.log('Extracted conditions from group:', conditions);
-        return conditions;
+      } else if (node.type === 'group') {
+        return {
+          id: node.id,
+          type: 'group',
+          groupOperator: node.operator || 'AND',
+          children: node.children ? node.children.map((child: any, index: number) => 
+            convertNode(child, index === 0)
+          ) : [],
+          logicalOperator: isFirst ? undefined : 'AND' // Default chaining operator
+        };
       }
-      return [];
+      return null;
     };
 
-    const result = extractConditions(audience.rootNode);
+    // Convert all root children
+    const result = audience.rootNode.children.map((child: any, index: number) => 
+      convertNode(child, index === 0)
+    ).filter(Boolean);
+
     console.log('Converted conditions:', result);
     return result;
   };
@@ -447,18 +546,10 @@ const RuleEditor: React.FC = () => {
       ),
       children: (
         <div className="p-6">
-          {useImprovedUX ? (
-            <ImprovedConditionBuilder
-              onConditionChange={handleImprovedConditionChange}
-              initialConditions={convertAudienceToFlexibleConditions(ruleData.audience)}
-            />
-          ) : (
-            <ConditionBuilder
-              condition={ruleData.audience || undefined}
-              onChange={handleAudienceChange}
-              onValidationChange={handleAudienceValidationChange}
-            />
-          )}
+          <ImprovedConditionBuilder
+            onConditionChange={handleImprovedConditionChange}
+            initialConditions={convertAudienceToFlexibleConditions(ruleData.audience)}
+          />
         </div>
       ),
     },
@@ -625,13 +716,6 @@ const RuleEditor: React.FC = () => {
           </div>
           <Space>
             <Button
-              type="dashed"
-              onClick={() => setUseImprovedUX(!useImprovedUX)}
-              className="text-sm"
-            >
-              {useImprovedUX ? 'Classic UI' : 'New UX'}
-            </Button>
-            <Button
               icon={<SaveOutlined />}
               onClick={handleSaveDraft}
               type={hasUnsavedChanges ? "primary" : "default"}
@@ -659,19 +743,17 @@ const RuleEditor: React.FC = () => {
         </div>
       </div>
 
-      {/* Improved Navigation (when enabled) */}
-      {useImprovedUX && (
-        <div className="p-6">
-          <ImprovedTabNavigation
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            tabValidation={Object.keys(validationState).reduce((acc, key) => ({
-              ...acc,
-              [key]: validateTab(key)
-            }), {})}
-          />
-        </div>
-      )}
+      {/* Improved Navigation */}
+      <div className="p-6">
+        <ImprovedTabNavigation
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          tabValidation={Object.keys(validationState).reduce((acc, key) => ({
+            ...acc,
+            [key]: validateTab(key)
+          }), {})}
+        />
+      </div>
 
       {/* Tabs Content */}
       <div className="flex-1 overflow-hidden">
@@ -686,7 +768,7 @@ const RuleEditor: React.FC = () => {
               paddingLeft: '24px',
               paddingRight: '24px',
               borderBottom: '1px solid #f0f0f0',
-              display: useImprovedUX ? 'none' : 'flex' // Hide tabs when using improved UX
+              display: 'none' // Always hide tabs since we use improved navigation
             }}
           />
         </Spin>

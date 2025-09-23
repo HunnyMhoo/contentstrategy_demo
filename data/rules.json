@@ -4,7 +4,7 @@
       "id": "550e8400-e29b-41d4-a716-446655440001",
       "name": "Location-Based Credit Card Promotion",
       "status": "Draft",
-      "audienceSummary": "",
+      "audienceSummary": "AUM Band = 1–5M AND Marketing Segment = Growth AND Location is one of Shopping Area AND Distance to Mall < 500",
       "contentSources": [],
       "contentFiles": [
         "kbank-credit-card-promo.cms"
@@ -37,6 +37,24 @@
               "value": "Growth",
               "depth": 1,
               "isValid": true
+            },
+            {
+              "id": "condition_1758631236373",
+              "type": "condition",
+              "attributeId": "location",
+              "comparison": "in",
+              "value": "Shopping Area",
+              "depth": 1,
+              "isValid": true
+            },
+            {
+              "id": "condition_1758631236374",
+              "type": "condition",
+              "attributeId": "distance_to_mall",
+              "comparison": "less_than",
+              "value": 500,
+              "depth": 1,
+              "isValid": true
             }
           ],
           "depth": 0,
@@ -47,7 +65,7 @@
       "content": null,
       "fallback": null,
       "createdAt": "2025-09-23T08:30:00Z",
-      "updatedAt": "2025-09-23T12:41:02.627Z"
+      "updatedAt": "2025-09-23T13:17:53.094Z"
     },
     {
       "id": "550e8400-e29b-41d4-a716-446655440002",
@@ -63,7 +81,65 @@
       "priority": 95,
       "startDate": "2025-09-22T00:00:00Z",
       "endDate": "2025-12-31T23:59:59Z",
-      "audience": null,
+      "audience": {
+        "id": "condition_1758631252014",
+        "name": "Flexible Audience Conditions",
+        "rootNode": {
+          "id": "node_1758631252014",
+          "type": "group",
+          "operator": "AND",
+          "children": [
+            {
+              "id": "condition_1758631213840",
+              "type": "condition",
+              "attributeId": "targeted_lead",
+              "comparison": "equals",
+              "value": true,
+              "depth": 1,
+              "isValid": true
+            },
+            {
+              "id": "node_1758631252015",
+              "type": "group",
+              "operator": "OR",
+              "children": [
+                {
+                  "id": "condition_1758631236376",
+                  "type": "condition",
+                  "attributeId": "location",
+                  "comparison": "equals",
+                  "value": "Bangkok CBD",
+                  "depth": 2,
+                  "isValid": true
+                },
+                {
+                  "id": "condition_1758631236377",
+                  "type": "condition",
+                  "attributeId": "location",
+                  "comparison": "equals",
+                  "value": "Sukhumvit",
+                  "depth": 2,
+                  "isValid": true
+                },
+                {
+                  "id": "condition_1758631236378",
+                  "type": "condition",
+                  "attributeId": "location",
+                  "comparison": "equals",
+                  "value": "Silom",
+                  "depth": 2,
+                  "isValid": true
+                }
+              ],
+              "depth": 1,
+              "isValid": true
+            }
+          ],
+          "depth": 0,
+          "isValid": true
+        },
+        "lastModified": "2025-09-23T12:45:52.013Z"
+      },
       "content": null,
       "fallback": null,
       "createdAt": "2025-09-22T09:00:00Z",
@@ -187,6 +263,6 @@
   "meta": {
     "lastId": 8,
     "version": "1.0",
-    "updatedAt": "2025-09-23T12:44:00.958Z"
+    "updatedAt": "2025-09-23T13:17:53.094Z"
   }
 }

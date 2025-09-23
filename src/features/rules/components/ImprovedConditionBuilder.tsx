@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Select, Space, Tag, Alert, Divider, Input, InputNumber } from 'antd';
-import { PlusOutlined, DeleteOutlined, UserOutlined, TrophyOutlined, DollarOutlined } from '@ant-design/icons';
+import { Card, Button, Select, Space, Tag, Alert, Input, InputNumber } from 'antd';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ComparisonOperator, ConditionOperator } from '../types';
 import { getAttributesByGroup } from '../attributeDefinitions';
 
-// Flexible condition structure
+// Flexible condition structure - now supports both conditions and groups
 interface FlexibleCondition {
   id: string;
-  attributeId: string;
-  operator: ComparisonOperator;
-  value: any;
-  logicalOperator?: ConditionOperator; // AND, OR for chaining
+  type: 'condition' | 'group';
+  
+  // For individual conditions
+  attributeId?: string;
+  operator?: ComparisonOperator;
+  value?: any;
+  
+  // For groups
+  groupOperator?: ConditionOperator; // AND, OR, NOT for the group
+  children?: FlexibleCondition[];
+  
+  // For chaining (applies to both conditions and groups)
+  logicalOperator?: ConditionOperator; // AND, OR for chaining with previous item
 }
 
 interface ImprovedConditionBuilderProps {
@@ -41,15 +50,43 @@ const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({
 }) => {
   const [conditions, setConditions] = useState<FlexibleCondition[]>(() => {
     console.log('Setting initial conditions:', initialConditions);
-    return initialConditions;
+    // Fix logical operators immediately when setting initial state
+    const fixGroupLogicalOperators = (items: FlexibleCondition[]): FlexibleCondition[] => {
+      return items.map(item => {
+        if (item.type === 'group' && item.children) {
+          const fixedChildren = item.children.map((child, index) => ({
+            ...child,
+            logicalOperator: index === 0 ? undefined : item.groupOperator || 'AND'
+          }));
+          return { ...item, children: fixGroupLogicalOperators(fixedChildren) };
+        }
+        return item;
+      });
+    };
+    return fixGroupLogicalOperators(initialConditions);
   });
-  const [isAddingCondition, setIsAddingCondition] = useState(false);
 
   // Update conditions when initialConditions change
   useEffect(() => {
     console.log('ImprovedConditionBuilder received initialConditions:', initialConditions);
-    setConditions(initialConditions);
+    // Fix any inconsistent logical operators in groups
+    const fixedConditions = fixGroupLogicalOperators(initialConditions);
+    setConditions(fixedConditions);
   }, [initialConditions]);
+
+  // Helper function to ensure all conditions within groups use the group's operator
+  const fixGroupLogicalOperators = (items: FlexibleCondition[]): FlexibleCondition[] => {
+    return items.map(item => {
+      if (item.type === 'group' && item.children) {
+        const fixedChildren = item.children.map((child, index) => ({
+          ...child,
+          logicalOperator: index === 0 ? undefined : item.groupOperator || 'AND'
+        }));
+        return { ...item, children: fixGroupLogicalOperators(fixedChildren) };
+      }
+      return item;
+    });
+  };
 
   // Get all available attributes grouped by category
   const customerAttributes = getAttributesByGroup('customer');
@@ -62,6 +99,7 @@ const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({
   const addNewCondition = () => {
     const newCondition: FlexibleCondition = {
       id: `condition_${Date.now()}`,
+      type: 'condition',
       attributeId: '',
       operator: 'equals',
       value: '',
@@ -70,24 +108,107 @@ const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({
     
     const newConditions = [...conditions, newCondition];
     setConditions(newConditions);
-    setIsAddingCondition(true);
     onConditionChange(newConditions);
   };
 
+  const addNewConditionGroup = () => {
+    const newGroup: FlexibleCondition = {
+      id: `group_${Date.now()}`,
+      type: 'group',
+      groupOperator: 'AND',
+      children: [],
+      logicalOperator: conditions.length > 0 ? 'AND' : undefined
+    };
+    
+    const newConditions = [...conditions, newGroup];
+    setConditions(newConditions);
+    onConditionChange(newConditions);
+  };
+
+
   const updateCondition = (conditionId: string, updates: Partial<FlexibleCondition>) => {
-    const newConditions = conditions.map(condition => 
-      condition.id === conditionId ? { ...condition, ...updates } : condition
-    );
+    const updateRecursive = (items: FlexibleCondition[]): FlexibleCondition[] => {
+      return items.map(item => {
+        if (item.id === conditionId) {
+          const updatedItem = { ...item, ...updates };
+          
+          // If we're updating a group's operator, update child logical operators too
+          if (updatedItem.type === 'group' && updates.groupOperator !== undefined && updatedItem.children) {
+            updatedItem.children = updatedItem.children.map((child, index) => ({
+              ...child,
+              logicalOperator: index === 0 ? undefined : updatedItem.groupOperator
+            }));
+          }
+          
+          return updatedItem;
+        }
+        if (item.type === 'group' && item.children) {
+          return { ...item, children: updateRecursive(item.children) };
+        }
+        return item;
+      });
+    };
+
+    const newConditions = updateRecursive(conditions);
     setConditions(newConditions);
     onConditionChange(newConditions);
   };
 
   const removeCondition = (conditionId: string) => {
-    const newConditions = conditions.filter(c => c.id !== conditionId);
+    const removeRecursive = (items: FlexibleCondition[]): FlexibleCondition[] => {
+      const filtered = items.filter(item => item.id !== conditionId);
+      return filtered.map(item => {
+        if (item.type === 'group' && item.children) {
+          return { ...item, children: removeRecursive(item.children) };
+        }
+        return item;
+      });
+    };
+
+    const newConditions = removeRecursive(conditions);
     // Reset logical operator for first condition if it exists
     if (newConditions.length > 0) {
       newConditions[0].logicalOperator = undefined;
     }
+    setConditions(newConditions);
+    onConditionChange(newConditions);
+  };
+
+  const addToGroup = (groupId: string, itemType: 'condition' | 'group') => {
+    const newItem: FlexibleCondition = itemType === 'condition' 
+      ? {
+          id: `condition_${Date.now()}`,
+          type: 'condition',
+          attributeId: '',
+          operator: 'equals',
+          value: ''
+        }
+      : {
+          id: `group_${Date.now()}`,
+          type: 'group',
+          groupOperator: 'AND',
+          children: []
+        };
+
+    const addToGroupRecursive = (items: FlexibleCondition[]): FlexibleCondition[] => {
+      return items.map(item => {
+        if (item.id === groupId && item.type === 'group') {
+          const children = item.children || [];
+          // Add logical operator to new item if it's not the first
+          // Default to the group's operator, or 'AND' if not specified
+          if (children.length > 0) {
+            newItem.logicalOperator = item.groupOperator || 'AND';
+          }
+          return { ...item, children: [...children, newItem] };
+        }
+        if (item.type === 'group' && item.children) {
+          return { ...item, children: addToGroupRecursive(item.children) };
+        }
+        return item;
+      });
+    };
+
+    const newConditions = addToGroupRecursive(conditions);
     setConditions(newConditions);
     onConditionChange(newConditions);
   };
@@ -167,6 +288,192 @@ const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({
     }
   };
 
+  // Recursive rendering function for conditions and groups
+  const renderConditionItem = (item: FlexibleCondition, depth: number = 0): React.ReactElement => {
+    if (item.type === 'condition') {
+      return renderCondition(item, depth);
+    } else {
+      return renderGroup(item, depth);
+    }
+  };
+
+  const renderCondition = (condition: FlexibleCondition, depth: number): React.ReactElement => (
+    <div key={condition.id} className="bg-white border border-gray-200 rounded-lg p-4" style={{ marginLeft: `${depth * 20}px` }}>
+      {/* Logical Operator */}
+      {condition.logicalOperator && (
+        <div className="flex items-center mb-3">
+          <Select
+            value={condition.logicalOperator}
+            onChange={(value) => updateCondition(condition.id, { logicalOperator: value })}
+            className="w-20"
+            size="small"
+          >
+            {LOGICAL_OPERATORS.map(op => (
+              <Select.Option key={op.value} value={op.value}>
+                {op.label}
+              </Select.Option>
+            ))}
+          </Select>
+        </div>
+      )}
+
+      {/* Condition Builder Row */}
+      <div className="grid grid-cols-12 gap-3 items-center">
+        {/* Attribute Selection */}
+        <div className="col-span-4">
+          <Select
+            value={condition.attributeId}
+            onChange={(value) => updateCondition(condition.id, { attributeId: value })}
+            placeholder="Select attribute"
+            className="w-full"
+            showSearch
+            optionFilterProp="label"
+          >
+            <Select.OptGroup label="Customer Attributes">
+              {customerAttributes.map(attr => (
+                <Select.Option key={attr.id} value={attr.id} label={attr.label}>
+                  {attr.label}
+                </Select.Option>
+              ))}
+            </Select.OptGroup>
+            <Select.OptGroup label="Activity">
+              {activityAttributes.map(attr => (
+                <Select.Option key={attr.id} value={attr.id} label={attr.label}>
+                  {attr.label}
+                </Select.Option>
+              ))}
+            </Select.OptGroup>
+            <Select.OptGroup label="Custom Data">
+              {customAttributes.map(attr => (
+                <Select.Option key={attr.id} value={attr.id} label={attr.label}>
+                  {attr.label}
+                </Select.Option>
+              ))}
+            </Select.OptGroup>
+          </Select>
+        </div>
+
+        {/* Operator Selection */}
+        <div className="col-span-3">
+          <Select
+            value={condition.operator}
+            onChange={(value) => updateCondition(condition.id, { operator: value })}
+            placeholder="Operator"
+            className="w-full"
+          >
+            {getAvailableOperators(condition.attributeId || '').map(op => (
+              <Select.Option key={op.value} value={op.value}>
+                {op.label}
+              </Select.Option>
+            ))}
+          </Select>
+        </div>
+
+        {/* Value Input */}
+        <div className="col-span-4">
+          {renderValueInput(condition)}
+        </div>
+
+        {/* Remove Button */}
+        <div className="col-span-1">
+          <Button 
+            type="text" 
+            icon={<DeleteOutlined />}
+            onClick={() => removeCondition(condition.id)}
+            className="text-red-500 hover:text-red-700"
+          />
+        </div>
+      </div>
+
+      {/* Condition Summary */}
+      {condition.attributeId && condition.operator && condition.value !== '' && (
+        <div className="mt-3 p-2 bg-blue-50 rounded text-sm text-blue-700">
+          <strong>Preview:</strong> {getConditionPreview(condition, allAttributes)}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderGroup = (group: FlexibleCondition, depth: number): React.ReactElement => (
+    <div key={group.id} className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50" style={{ marginLeft: `${depth * 20}px` }}>
+      {/* Group Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-3">
+          {/* Logical Operator for chaining groups */}
+          {group.logicalOperator && (
+            <Select
+              value={group.logicalOperator}
+              onChange={(value) => updateCondition(group.id, { logicalOperator: value })}
+              className="w-20"
+              size="small"
+            >
+            {LOGICAL_OPERATORS.map(op => (
+              <Select.Option key={op.value} value={op.value}>
+                {op.label}
+              </Select.Option>
+            ))}
+            </Select>
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button 
+            type="dashed" 
+            size="small"
+            icon={<PlusOutlined />}
+            onClick={() => addToGroup(group.id, 'condition')}
+          >
+            Add Condition
+          </Button>
+          <Button 
+            type="dashed" 
+            size="small"
+            onClick={() => addToGroup(group.id, 'group')}
+          >
+            Add Group
+          </Button>
+          <Button 
+            type="text" 
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={() => removeCondition(group.id)}
+            className="text-red-500 hover:text-red-700"
+          />
+        </div>
+      </div>
+
+      {/* Group Children */}
+      <div className="space-y-3">
+        {group.children && group.children.length > 0 ? (
+          group.children.map(child => renderConditionItem(child, depth + 1))
+        ) : (
+          <div className="text-center py-4 text-gray-500">
+            <p>Empty group - add conditions or nested groups</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Recursive function to render summary conditions
+  const renderSummaryConditions = (items: FlexibleCondition[], depth: number = 0): React.ReactElement[] => {
+    return items.map((item) => (
+      <div key={item.id} className="flex items-center space-x-2" style={{ marginLeft: `${depth * 16}px` }}>
+        {item.logicalOperator && (
+          <Tag color="blue" className="font-medium">
+            {item.logicalOperator}
+          </Tag>
+        )}
+        <span>{getConditionPreview(item, allAttributes)}</span>
+        {item.type === 'group' && item.children && item.children.length > 0 && (
+          <div className="ml-4 space-y-1">
+            {renderSummaryConditions(item.children, depth + 1)}
+          </div>
+        )}
+      </div>
+    ));
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -191,17 +498,26 @@ const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({
                   Start Building Your Audience
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Add conditions to define who should see this content
+                  Add conditions or groups to define who should see this content
                 </p>
               </div>
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
-                onClick={addNewCondition}
-                size="large"
-              >
-                Add Your First Condition
-              </Button>
+              <Space>
+                <Button 
+                  type="primary" 
+                  icon={<PlusOutlined />}
+                  onClick={addNewCondition}
+                  size="large"
+                >
+                  Add Your First Condition
+                </Button>
+                <Button 
+                  type="default" 
+                  onClick={addNewConditionGroup}
+                  size="large"
+                >
+                  Add Condition Group
+                </Button>
+              </Space>
             </div>
           )}
 
@@ -210,112 +526,26 @@ const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-medium text-gray-900">Your Conditions:</h4>
-                <Button 
-                  type="dashed" 
-                  icon={<PlusOutlined />}
-                  onClick={addNewCondition}
-                  size="small"
-                >
-                  Add Condition
-                </Button>
+                <Space>
+                  <Button 
+                    type="dashed" 
+                    icon={<PlusOutlined />}
+                    onClick={addNewCondition}
+                    size="small"
+                  >
+                    Add Condition
+                  </Button>
+                  <Button 
+                    type="dashed" 
+                    onClick={addNewConditionGroup}
+                    size="small"
+                  >
+                    Add Group
+                  </Button>
+                </Space>
               </div>
               
-              {conditions.map((condition, index) => (
-                <div key={condition.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                  {/* Logical Operator */}
-                  {condition.logicalOperator && (
-                    <div className="flex items-center mb-3">
-                      <Select
-                        value={condition.logicalOperator}
-                        onChange={(value) => updateCondition(condition.id, { logicalOperator: value })}
-                        className="w-20"
-                        size="small"
-                      >
-                        {LOGICAL_OPERATORS.map(op => (
-                          <Select.Option key={op.value} value={op.value}>
-                            <Tag color={op.color} size="small">{op.label}</Tag>
-                          </Select.Option>
-                        ))}
-                      </Select>
-                    </div>
-                  )}
-
-                  {/* Condition Builder Row */}
-                  <div className="grid grid-cols-12 gap-3 items-center">
-                    {/* Attribute Selection */}
-                    <div className="col-span-4">
-                      <Select
-                        value={condition.attributeId}
-                        onChange={(value) => updateCondition(condition.id, { attributeId: value })}
-                        placeholder="Select attribute"
-                        className="w-full"
-                        showSearch
-                        optionFilterProp="label"
-                      >
-                        <Select.OptGroup label="Customer Attributes">
-                          {customerAttributes.map(attr => (
-                            <Select.Option key={attr.id} value={attr.id} label={attr.label}>
-                              {attr.label}
-                            </Select.Option>
-                          ))}
-                        </Select.OptGroup>
-                        <Select.OptGroup label="Activity">
-                          {activityAttributes.map(attr => (
-                            <Select.Option key={attr.id} value={attr.id} label={attr.label}>
-                              {attr.label}
-                            </Select.Option>
-                          ))}
-                        </Select.OptGroup>
-                        <Select.OptGroup label="Custom Data">
-                          {customAttributes.map(attr => (
-                            <Select.Option key={attr.id} value={attr.id} label={attr.label}>
-                              {attr.label}
-                            </Select.Option>
-                          ))}
-                        </Select.OptGroup>
-                      </Select>
-                    </div>
-
-                    {/* Operator Selection */}
-                    <div className="col-span-3">
-                      <Select
-                        value={condition.operator}
-                        onChange={(value) => updateCondition(condition.id, { operator: value })}
-                        placeholder="Operator"
-                        className="w-full"
-                      >
-                        {getAvailableOperators(condition.attributeId).map(op => (
-                          <Select.Option key={op.value} value={op.value}>
-                            {op.label}
-                          </Select.Option>
-                        ))}
-                      </Select>
-                    </div>
-
-                    {/* Value Input */}
-                    <div className="col-span-4">
-                      {renderValueInput(condition)}
-                    </div>
-
-                    {/* Remove Button */}
-                    <div className="col-span-1">
-                      <Button 
-                        type="text" 
-                        icon={<DeleteOutlined />}
-                        onClick={() => removeCondition(condition.id)}
-                        className="text-red-500 hover:text-red-700"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Condition Summary */}
-                  {condition.attributeId && condition.operator && condition.value !== '' && (
-                    <div className="mt-3 p-2 bg-blue-50 rounded text-sm text-blue-700">
-                      <strong>Preview:</strong> {getConditionPreview(condition, allAttributes)}
-                    </div>
-                  )}
-                </div>
-              ))}
+              {conditions.map(item => renderConditionItem(item))}
             </div>
           )}
         </div>
@@ -327,16 +557,7 @@ const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({
           <div className="space-y-2">
             <p className="font-medium text-gray-700">Show content to customers who match:</p>
             <div className="text-sm text-gray-600">
-              {conditions.map((condition, index) => (
-                <div key={condition.id} className="flex items-center space-x-2">
-                  {condition.logicalOperator && (
-                    <Tag color="blue" size="small" className="font-medium">
-                      {condition.logicalOperator}
-                    </Tag>
-                  )}
-                  <span>{getConditionPreview(condition, allAttributes)}</span>
-                </div>
-              ))}
+              {renderSummaryConditions(conditions)}
             </div>
             <Alert
               message={`Estimated audience: ${estimateAudienceSize(conditions)} customers`}
@@ -369,6 +590,11 @@ const estimateAudienceSize = (conditions: FlexibleCondition[]): string => {
 
 // Helper function to get condition preview text
 const getConditionPreview = (condition: FlexibleCondition, attributes: any[]): string => {
+  if (condition.type === 'group') {
+    const childrenCount = condition.children?.length || 0;
+    return `Group (${condition.groupOperator}) with ${childrenCount} ${childrenCount === 1 ? 'item' : 'items'}`;
+  }
+
   const attribute = attributes.find(attr => attr.id === condition.attributeId);
   if (!attribute || !condition.value) return 'Incomplete condition';
 
