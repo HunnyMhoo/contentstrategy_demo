@@ -90,7 +90,7 @@ const RulesList: React.FC = () => {
   };
 
 
-  const renderContentSources = (sources: string[], record: Rule) => {
+  const renderContentSources = (_sources: string[], record: Rule) => {
     const contentFiles = record.contentFiles || [];
     
     return (
@@ -321,7 +321,7 @@ const RulesList: React.FC = () => {
       {/* Preview Section */}
       <PreviewSection rules={rules} />
       
-      <style jsx>{`
+      <style>{`
         .rules-table .ant-table-thead > tr > th {
           background-color: #f8fafc;
           border-bottom: 2px solid #e2e8f0;

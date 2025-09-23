@@ -6,7 +6,30 @@ import type {
   FallbackConfiguration 
 } from '../features/rules/types';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+// Get API base URL from environment variables
+const getApiBaseUrl = (): string => {
+  // In development, use environment variable or proxy
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // In development, use the Vite proxy (requests to /api will be proxied to localhost:3001)
+  if (import.meta.env.DEV) {
+    return '';  // Use relative URLs so Vite proxy can handle them
+  }
+  
+  // In production, try to determine API URL
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname } = window.location;
+    // If deployed on same domain, assume API is on /api
+    return `${protocol}//${hostname}/api`;
+  }
+  
+  // Fallback
+  return '/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -71,7 +94,7 @@ class RulesApiService {
           data: {
             rules: data.rules,
             meta: data.meta
-          }
+          } as T
         };
       }
       // Otherwise just return the response as is
@@ -89,17 +112,17 @@ class RulesApiService {
 
   // Get all rules
   async getAllRules(): Promise<ApiResponse<RulesListResponse>> {
-    return this.request<RulesListResponse>('/rules');
+    return this.request<RulesListResponse>('/api/rules');
   }
 
   // Get a specific rule by ID
   async getRule(id: string): Promise<ApiResponse<Rule>> {
-    return this.request<Rule>(`/rules/${id}`);
+    return this.request<Rule>(`/api/rules/${id}`);
   }
 
   // Create a new rule
   async createRule(ruleData: CreateRuleRequest): Promise<ApiResponse<Rule>> {
-    return this.request<Rule>('/rules', {
+    return this.request<Rule>('/api/rules', {
       method: 'POST',
       body: JSON.stringify(ruleData),
     });
@@ -107,7 +130,7 @@ class RulesApiService {
 
   // Update an existing rule
   async updateRule(id: string, ruleData: UpdateRuleRequest): Promise<ApiResponse<Rule>> {
-    return this.request<Rule>(`/rules/${id}`, {
+    return this.request<Rule>(`/api/rules/${id}`, {
       method: 'PUT',
       body: JSON.stringify(ruleData),
     });
@@ -115,21 +138,21 @@ class RulesApiService {
 
   // Delete a rule
   async deleteRule(id: string): Promise<ApiResponse<Rule>> {
-    return this.request<Rule>(`/rules/${id}`, {
+    return this.request<Rule>(`/api/rules/${id}`, {
       method: 'DELETE',
     });
   }
 
   // Duplicate a rule
   async duplicateRule(id: string): Promise<ApiResponse<Rule>> {
-    return this.request<Rule>(`/rules/${id}/duplicate`, {
+    return this.request<Rule>(`/api/rules/${id}/duplicate`, {
       method: 'POST',
     });
   }
 
   // Health check
   async healthCheck(): Promise<ApiResponse<{ message: string; timestamp: string }>> {
-    return this.request<{ message: string; timestamp: string }>('/health');
+    return this.request<{ message: string; timestamp: string }>('/api/health');
   }
 }
 
