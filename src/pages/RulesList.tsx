@@ -1,23 +1,79 @@
-import React, { useEffect } from 'react';
-import { Table, Button, Tag, Space, Typography, Card } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Table, Button, Tag, Space, Typography, Card, message, Spin } from 'antd';
 import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
-import { mockRules, type Rule } from '../lib/mockData';
+import type { Rule } from '../lib/mockData';
+import { rulesApi } from '../services/rulesApi';
 
 const { Title } = Typography;
 
 const RulesList: React.FC = () => {
   const navigate = useNavigate();
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Demo telemetry logging
   const logDemoEvent = (eventName: string, data?: any) => {
     console.log(`[Demo Event] ${eventName}`, data);
   };
 
+  // Fetch rules from API
+  const fetchRules = async () => {
+    setLoading(true);
+    try {
+      const response = await rulesApi.getAllRules();
+      if (response.success && response.data) {
+        setRules(response.data.rules);
+        logDemoEvent('rules_list_page_load', { rulesCount: response.data.rules.length });
+      } else {
+        message.error(response.error || 'Failed to fetch rules');
+      }
+    } catch (error) {
+      console.error('Error fetching rules:', error);
+      message.error('Failed to fetch rules');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    logDemoEvent('rules_list_page_load', { rulesCount: mockRules.length });
+    fetchRules();
   }, []);
+
+  // Handle rule duplication
+  const handleDuplicate = async (ruleId: string) => {
+    try {
+      const response = await rulesApi.duplicateRule(ruleId);
+      if (response.success) {
+        message.success('Rule duplicated successfully');
+        fetchRules(); // Refresh the list
+        logDemoEvent('rule_duplicate_success', { ruleId });
+      } else {
+        message.error(response.error || 'Failed to duplicate rule');
+      }
+    } catch (error) {
+      console.error('Error duplicating rule:', error);
+      message.error('Failed to duplicate rule');
+    }
+  };
+
+  // Handle rule deletion
+  const handleDelete = async (ruleId: string) => {
+    try {
+      const response = await rulesApi.deleteRule(ruleId);
+      if (response.success) {
+        message.success('Rule deleted successfully');
+        fetchRules(); // Refresh the list
+        logDemoEvent('rule_delete_success', { ruleId });
+      } else {
+        message.error(response.error || 'Failed to delete rule');
+      }
+    } catch (error) {
+      console.error('Error deleting rule:', error);
+      message.error('Failed to delete rule');
+    }
+  };
 
   const getStatusColor = (status: Rule['status']) => {
     switch (status) {
@@ -109,20 +165,27 @@ const RulesList: React.FC = () => {
     },
     {
       title: 'Schedule',
-      dataIndex: 'schedule',
       key: 'schedule',
       width: 200,
-      render: (text) => (
-        <span className="text-gray-600 text-sm">{text}</span>
-      ),
+      render: (_, record) => {
+        const startDate = new Date(record.startDate).toLocaleDateString();
+        const endDate = new Date(record.endDate).toLocaleDateString();
+        return (
+          <span className="text-gray-600 text-sm">
+            {startDate} - {endDate}
+          </span>
+        );
+      },
     },
     {
       title: 'Last Modified',
-      dataIndex: 'lastModified',
-      key: 'lastModified',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
       width: 150,
       render: (text) => (
-        <span className="text-gray-500 text-sm">{text}</span>
+        <span className="text-gray-500 text-sm">
+          {new Date(text).toLocaleDateString()}
+        </span>
       ),
     },
     {
@@ -147,7 +210,7 @@ const RulesList: React.FC = () => {
             size="small"
             onClick={() => {
               logDemoEvent('rule_duplicate_click', { ruleId: record.id });
-              console.log('Duplicate rule:', record.id);
+              handleDuplicate(record.id);
             }}
             title="Duplicate Rule"
           />
@@ -158,7 +221,7 @@ const RulesList: React.FC = () => {
             danger
             onClick={() => {
               logDemoEvent('rule_delete_click', { ruleId: record.id });
-              console.log('Delete rule:', record.id);
+              handleDelete(record.id);
             }}
             title="Delete Rule"
           />
@@ -191,20 +254,22 @@ const RulesList: React.FC = () => {
       </div>
 
       <Card className="shadow-sm">
-        <Table
-          columns={columns}
-          dataSource={mockRules}
-          rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} rules`,
-          }}
-          scroll={{ x: 1000 }}
-          className="ant-table-responsive"
-        />
+        <Spin spinning={loading}>
+          <Table
+            columns={columns}
+            dataSource={rules}
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} rules`,
+            }}
+            scroll={{ x: 1000 }}
+            className="ant-table-responsive"
+          />
+        </Spin>
       </Card>
     </div>
   );

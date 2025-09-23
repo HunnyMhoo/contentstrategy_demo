@@ -4,8 +4,13 @@ export interface Rule {
   status: 'Draft' | 'Active' | 'Inactive';
   audienceSummary: string;
   contentSources: ('TargetedLead' | 'ProductReco' | 'CMS')[];
-  schedule: string;
-  lastModified: string;
+  startDate: string;
+  endDate: string;
+  audience: any;
+  content: any;
+  fallback: any;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const mockRules: Rule[] = [

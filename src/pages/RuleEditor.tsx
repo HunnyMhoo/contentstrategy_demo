@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, Button, Space, Typography, Alert, Modal } from 'antd';
+import { Tabs, Button, Space, Typography, Alert, Modal, message, Spin } from 'antd';
 import { SaveOutlined, CopyOutlined, PlayCircleOutlined, CheckCircleOutlined, WarningOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { rulesApi } from '../services/rulesApi';
 import ConditionBuilder from '../features/rules/components/ConditionBuilder';
 import ContentConfiguration from '../features/rules/components/content/ContentConfiguration';
 import FallbackConfiguration from '../features/rules/components/fallback/FallbackConfiguration';
@@ -38,6 +39,8 @@ const RuleEditor: React.FC = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [loading, setLoading] = useState(!isNewRule);
+  const [saving, setSaving] = useState(false);
   const [audienceValidation, setAudienceValidation] = useState<ValidationResult>({ isValid: false, errors: [], warnings: [] });
   const [contentValidation, setContentValidation] = useState<ContentValidationResult>({ isValid: false, errors: [], warnings: [], hasContent: false, priorityConflicts: [] });
   const [fallbackValidation, setFallbackValidation] = useState<FallbackValidationResult>({ isValid: false, errors: [], warnings: [], hasFallbacks: false, scenarioErrors: { ineligible_audience: [], empty_supply: [] } });
@@ -60,6 +63,39 @@ const RuleEditor: React.FC = () => {
     preview: 'warning', // Preview shows warning until simulation is run
     json: 'valid', // JSON is always valid as it's read-only
   });
+
+  // Load existing rule data
+  useEffect(() => {
+    if (!isNewRule && id) {
+      loadRule(id);
+    }
+  }, [id, isNewRule]);
+
+  const loadRule = async (ruleId: string) => {
+    setLoading(true);
+    try {
+      const response = await rulesApi.getRule(ruleId);
+      if (response.success && response.data) {
+        const rule = response.data;
+        setRuleData({
+          name: rule.name,
+          audience: rule.audience,
+          content: rule.content,
+          fallback: rule.fallback,
+          schedule: null, // Will be implemented later
+        });
+      } else {
+        message.error(response.error || 'Failed to load rule');
+        navigate('/rules');
+      }
+    } catch (error) {
+      console.error('Error loading rule:', error);
+      message.error('Failed to load rule');
+      navigate('/rules');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle navigation blocking for unsaved changes
   useEffect(() => {
@@ -160,24 +196,68 @@ const RuleEditor: React.FC = () => {
   };
 
   // Handle save draft
-  const handleSaveDraft = () => {
-    console.log('rule_saved', { ruleId: id || 'new', data: ruleData });
-    setHasUnsavedChanges(false);
-    // Mock save success - update validation state
-    setValidationState(prev => ({
-      ...prev,
-      audience: validateTab('audience'),
-      content: ruleData.content ? 'valid' : 'empty',
-      fallback: ruleData.fallback ? 'valid' : 'empty',
-      schedule: ruleData.schedule ? 'valid' : 'empty',
-    }));
+  const handleSaveDraft = async () => {
+    setSaving(true);
+    try {
+      const saveData = {
+        name: ruleData.name,
+        status: 'Draft' as const,
+        audienceSummary: '', // Will be generated from audience conditions
+        contentSources: [], // Will be generated from content config
+        audience: ruleData.audience,
+        content: ruleData.content,
+        fallback: ruleData.fallback,
+      };
+
+      let response;
+      if (isNewRule) {
+        response = await rulesApi.createRule(saveData);
+        if (response.success && response.data) {
+          // Navigate to the new rule's edit page
+          navigate(`/rules/${response.data.id}`, { replace: true });
+          message.success('Rule created successfully');
+        }
+      } else {
+        response = await rulesApi.updateRule(id!, saveData);
+        if (response.success) {
+          message.success('Rule saved successfully');
+        }
+      }
+
+      if (response.success) {
+        setHasUnsavedChanges(false);
+        console.log('rule_saved', { ruleId: id || 'new', data: ruleData });
+      } else {
+        message.error(response.error || 'Failed to save rule');
+      }
+    } catch (error) {
+      console.error('Error saving rule:', error);
+      message.error('Failed to save rule');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Handle duplicate
-  const handleDuplicate = () => {
-    console.log('rule_duplicated', { originalId: id });
-    const newRuleId = `${id}_copy_${Date.now()}`;
-    navigate(`/rules/${newRuleId}`);
+  const handleDuplicate = async () => {
+    if (!id) return;
+    
+    setSaving(true);
+    try {
+      const response = await rulesApi.duplicateRule(id);
+      if (response.success && response.data) {
+        console.log('rule_duplicated', { originalId: id });
+        navigate(`/rules/${response.data.id}`);
+        message.success('Rule duplicated successfully');
+      } else {
+        message.error(response.error || 'Failed to duplicate rule');
+      }
+    } catch (error) {
+      console.error('Error duplicating rule:', error);
+      message.error('Failed to duplicate rule');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Handle run simulation
@@ -403,6 +483,7 @@ const RuleEditor: React.FC = () => {
               onClick={handleSaveDraft}
               type={hasUnsavedChanges ? "primary" : "default"}
               className={hasUnsavedChanges ? "animate-pulse" : ""}
+              loading={saving}
             >
               Save Draft
             </Button>
@@ -410,6 +491,7 @@ const RuleEditor: React.FC = () => {
               icon={<CopyOutlined />}
               onClick={handleDuplicate}
               disabled={isNewRule}
+              loading={saving}
             >
               Duplicate
             </Button>
@@ -426,18 +508,20 @@ const RuleEditor: React.FC = () => {
 
       {/* Tabs Content */}
       <div className="flex-1 overflow-hidden">
-        <Tabs
-          activeKey={activeTab}
-          onChange={handleTabChange}
-          items={tabItems}
-          className="h-full"
-          tabBarStyle={{ 
-            marginBottom: 0,
-            paddingLeft: '24px',
-            paddingRight: '24px',
-            borderBottom: '1px solid #f0f0f0'
-          }}
-        />
+        <Spin spinning={loading} tip="Loading rule...">
+          <Tabs
+            activeKey={activeTab}
+            onChange={handleTabChange}
+            items={tabItems}
+            className="h-full"
+            tabBarStyle={{ 
+              marginBottom: 0,
+              paddingLeft: '24px',
+              paddingRight: '24px',
+              borderBottom: '1px solid #f0f0f0'
+            }}
+          />
+        </Spin>
       </div>
     </div>
   );
