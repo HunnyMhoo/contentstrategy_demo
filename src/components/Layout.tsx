@@ -37,17 +37,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     ];
 
     if (path === '/rules' || path === '/') {
-      items.push({ title: 'Rules' });
+      items.push({ title: <span>Rules</span> });
     } else if (path === '/rules/new') {
       items.push(
         { title: <a onClick={() => navigate('/rules')}>Rules</a> },
-        { title: 'New Rule' }
+        { title: <span>New Rule</span> }
       );
     } else if (path.startsWith('/rules/')) {
       const ruleId = path.split('/')[2];
       items.push(
         { title: <a onClick={() => navigate('/rules')}>Rules</a> },
-        { title: `Edit Rule ${ruleId}` }
+        { title: <span>Edit Rule {ruleId}</span> }
       );
     }
 
