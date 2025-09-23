@@ -48,6 +48,21 @@ export const CUSTOMER_ATTRIBUTES: AttributeDefinition[] = [
     type: 'number',
     group: 'customer',
     description: 'Number of months since account was opened'
+  },
+  {
+    id: 'location',
+    label: 'Location',
+    type: 'enum',
+    group: 'customer',
+    options: ['Shopping Area', 'Bangkok CBD', 'Sukhumvit', 'Silom', 'Chatuchak', 'Siam', 'Asok', 'Thonglor'],
+    description: 'Customer\'s current or primary location'
+  },
+  {
+    id: 'distance_to_mall',
+    label: 'Distance to Mall (meters)',
+    type: 'number',
+    group: 'customer',
+    description: 'Distance to nearest shopping mall in meters'
   }
 ];
 

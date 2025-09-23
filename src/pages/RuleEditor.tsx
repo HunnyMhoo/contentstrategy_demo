@@ -4,9 +4,14 @@ import { SaveOutlined, CopyOutlined, PlayCircleOutlined, CheckCircleOutlined, Wa
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { rulesApi } from '../services/rulesApi';
 import ConditionBuilder from '../features/rules/components/ConditionBuilder';
+import ImprovedConditionBuilder from '../features/rules/components/ImprovedConditionBuilder';
 import ContentConfiguration from '../features/rules/components/content/ContentConfiguration';
 import FallbackConfiguration from '../features/rules/components/fallback/FallbackConfiguration';
+import PreviewSection from '../features/rules/components/PreviewSection';
+import ImprovedTabNavigation from '../components/ImprovedTabNavigation';
+import ContextualHelp from '../components/ContextualHelp';
 import type { AudienceCondition, ValidationResult, ContentConfiguration as ContentConfigurationType, ContentValidationResult, FallbackConfiguration as FallbackConfigurationType, FallbackValidationResult } from '../features/rules/types';
+import type { Rule } from '../lib/mockData';
 
 const { Title } = Typography;
 
@@ -41,6 +46,7 @@ const RuleEditor: React.FC = () => {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [loading, setLoading] = useState(!isNewRule);
   const [saving, setSaving] = useState(false);
+  const [useImprovedUX, setUseImprovedUX] = useState(true); // Toggle for new UX
   const [audienceValidation, setAudienceValidation] = useState<ValidationResult>({ isValid: false, errors: [], warnings: [] });
   const [contentValidation, setContentValidation] = useState<ContentValidationResult>({ isValid: false, errors: [], warnings: [], hasContent: false, priorityConflicts: [] });
   const [fallbackValidation, setFallbackValidation] = useState<FallbackValidationResult>({ isValid: false, errors: [], warnings: [], hasFallbacks: false, scenarioErrors: { ineligible_audience: [], empty_supply: [] } });
@@ -263,8 +269,16 @@ const RuleEditor: React.FC = () => {
   // Handle run simulation
   const handleRunSimulation = () => {
     console.log('simulation_run', { ruleId: id || 'new' });
+    
+    // Check if we have minimum data for simulation
+    if (!ruleData.audience && !ruleData.content) {
+      message.warning('Please configure audience conditions and content sources before running simulation');
+      return;
+    }
+    
     setActiveTab('preview');
     setValidationState(prev => ({ ...prev, preview: 'valid' }));
+    message.success('Simulation ready - preview updated with current rule configuration');
   };
 
   // Handle audience condition changes
@@ -296,6 +310,91 @@ const RuleEditor: React.FC = () => {
     setFallbackValidation(validation);
   };
 
+  // Handle improved condition builder changes
+  const handleImprovedConditionChange = (conditions: any[]) => {
+    // Convert flexible conditions to AudienceCondition format
+    if (conditions.length === 0) {
+      setRuleData(prev => ({ ...prev, audience: null }));
+      setHasUnsavedChanges(true);
+      return;
+    }
+
+    // Create audience condition from flexible conditions
+    const audienceCondition: AudienceCondition = {
+      id: `condition_${Date.now()}`,
+      name: 'Flexible Audience Conditions',
+      rootNode: {
+        id: `node_${Date.now()}`,
+        type: 'group',
+        operator: 'AND', // Default root operator
+        children: conditions.map((condition) => ({
+          id: condition.id,
+          type: 'condition',
+          attributeId: condition.attributeId,
+          comparison: condition.operator,
+          value: condition.value,
+          depth: 1,
+          isValid: !!(condition.attributeId && condition.operator && condition.value !== '')
+        })),
+        depth: 0,
+        isValid: conditions.every(c => c.attributeId && c.operator && c.value !== '')
+      },
+      lastModified: new Date()
+    };
+
+    setRuleData(prev => ({ ...prev, audience: audienceCondition }));
+    setHasUnsavedChanges(true);
+    
+    // Update validation state
+    const isValid = conditions.length > 0 && conditions.every(c => c.attributeId && c.operator && c.value !== '');
+    setAudienceValidation({
+      isValid,
+      errors: isValid ? [] : ['Please complete all condition fields'],
+      warnings: []
+    });
+  };
+
+  // Convert current rule data to format expected by PreviewSection
+  const convertRuleDataForPreview = (): Rule[] => {
+    if (!ruleData.audience && !ruleData.content) {
+      return [];
+    }
+
+    // Extract content sources from configuration
+    const contentSources: ('TargetedLead' | 'ProductReco' | 'CMS')[] = [];
+    
+    if (ruleData.content?.cms?.enabled) {
+      contentSources.push('CMS');
+    }
+    
+    if (ruleData.content?.offering?.enabled) {
+      if (ruleData.content.offering.targetedLead?.enabled) {
+        contentSources.push('TargetedLead');
+      }
+      if (ruleData.content.offering.productReco?.enabled) {
+        contentSources.push('ProductReco');
+      }
+    }
+
+    const rule: Rule = {
+      id: id || 'new-rule',
+      name: ruleData.name,
+      status: 'Active', // For preview purposes, treat as active
+      audienceSummary: ruleData.audience ? 'Custom audience conditions configured' : 'No audience configured',
+      contentSources,
+      priority: ruleData.content?.priority || 80, // Use configured priority or default
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days from now
+      audience: ruleData.audience,
+      content: ruleData.content,
+      fallback: ruleData.fallback,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return [rule];
+  };
+
   const tabItems = [
     {
       key: 'audience',
@@ -307,11 +406,17 @@ const RuleEditor: React.FC = () => {
       ),
       children: (
         <div className="p-6">
-          <ConditionBuilder
-            condition={ruleData.audience || undefined}
-            onChange={handleAudienceChange}
-            onValidationChange={handleAudienceValidationChange}
-          />
+          {useImprovedUX ? (
+            <ImprovedConditionBuilder
+              onConditionChange={handleImprovedConditionChange}
+            />
+          ) : (
+            <ConditionBuilder
+              condition={ruleData.audience || undefined}
+              onChange={handleAudienceChange}
+              onValidationChange={handleAudienceValidationChange}
+            />
+          )}
         </div>
       ),
     },
@@ -396,18 +501,17 @@ const RuleEditor: React.FC = () => {
       ),
       children: (
         <div className="p-6">
-          <Alert
-            message="Simulation Coming Soon"
-            description="User simulation and rule testing functionality."
-            type="info"
-            showIcon
-            className="mb-4"
-          />
-          <div className="mb-4">
-            <p className="text-gray-600">
-              Preview tab shows ⚠️ warning until simulation is run. Click "Run Simulation" button to test.
-            </p>
-          </div>
+          {ruleData.audience || ruleData.content ? (
+            <PreviewSection rules={convertRuleDataForPreview()} />
+          ) : (
+            <Alert
+              message="Configure Audience and Content First"
+              description="Please configure at least the audience conditions and content sources to see the preview simulation."
+              type="info"
+              showIcon
+              className="mb-4"
+            />
+          )}
         </div>
       ),
     },
@@ -479,6 +583,13 @@ const RuleEditor: React.FC = () => {
           </div>
           <Space>
             <Button
+              type="dashed"
+              onClick={() => setUseImprovedUX(!useImprovedUX)}
+              className="text-sm"
+            >
+              {useImprovedUX ? 'Classic UI' : 'New UX'}
+            </Button>
+            <Button
               icon={<SaveOutlined />}
               onClick={handleSaveDraft}
               type={hasUnsavedChanges ? "primary" : "default"}
@@ -506,6 +617,20 @@ const RuleEditor: React.FC = () => {
         </div>
       </div>
 
+      {/* Improved Navigation (when enabled) */}
+      {useImprovedUX && (
+        <div className="p-6">
+          <ImprovedTabNavigation
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            tabValidation={Object.keys(validationState).reduce((acc, key) => ({
+              ...acc,
+              [key]: validateTab(key)
+            }), {})}
+          />
+        </div>
+      )}
+
       {/* Tabs Content */}
       <div className="flex-1 overflow-hidden">
         <Spin spinning={loading} tip="Loading rule...">
@@ -518,11 +643,15 @@ const RuleEditor: React.FC = () => {
               marginBottom: 0,
               paddingLeft: '24px',
               paddingRight: '24px',
-              borderBottom: '1px solid #f0f0f0'
+              borderBottom: '1px solid #f0f0f0',
+              display: useImprovedUX ? 'none' : 'flex' // Hide tabs when using improved UX
             }}
           />
         </Spin>
       </div>
+
+      {/* Contextual Help */}
+      <ContextualHelp currentTab={activeTab} />
     </div>
   );
 };

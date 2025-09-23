@@ -3,26 +3,63 @@
     {
       "id": "550e8400-e29b-41d4-a716-446655440001",
       "name": "Location-Based Credit Card Promotion",
-      "status": "Active",
-      "audienceSummary": "User Location = Shopping Area AND Distance < 500m",
-      "contentSources": ["LocationBased"],
-      "contentFiles": ["kbank-credit-card-promo.cms"],
+      "status": "Draft",
+      "audienceSummary": "",
+      "contentSources": [],
+      "contentFiles": [
+        "kbank-credit-card-promo.cms"
+      ],
       "priority": 100,
       "startDate": "2025-09-23T00:00:00Z",
       "endDate": "2025-12-31T23:59:59Z",
-      "audience": null,
+      "audience": {
+        "id": "condition_1758631252013",
+        "name": "Flexible Audience Conditions",
+        "rootNode": {
+          "id": "node_1758631252013",
+          "type": "group",
+          "operator": "AND",
+          "children": [
+            {
+              "id": "condition_1758631213839",
+              "type": "condition",
+              "attributeId": "aum_band",
+              "comparison": "equals",
+              "value": "1–5M",
+              "depth": 1,
+              "isValid": true
+            },
+            {
+              "id": "condition_1758631236372",
+              "type": "condition",
+              "attributeId": "marketing_segment",
+              "comparison": "equals",
+              "value": "Growth",
+              "depth": 1,
+              "isValid": true
+            }
+          ],
+          "depth": 0,
+          "isValid": true
+        },
+        "lastModified": "2025-09-23T12:40:52.013Z"
+      },
       "content": null,
       "fallback": null,
       "createdAt": "2025-09-23T08:30:00Z",
-      "updatedAt": "2025-09-23T14:30:00Z"
+      "updatedAt": "2025-09-23T12:41:02.627Z"
     },
     {
       "id": "550e8400-e29b-41d4-a716-446655440002",
       "name": "Express Loan for Targeted Leads",
       "status": "Active",
       "audienceSummary": "Targeted Lead = true (Express Loan)",
-      "contentSources": ["TargetedLead"],
-      "contentFiles": ["kbank-express-loan.cms"],
+      "contentSources": [
+        "TargetedLead"
+      ],
+      "contentFiles": [
+        "kbank-express-loan.cms"
+      ],
       "priority": 95,
       "startDate": "2025-09-22T00:00:00Z",
       "endDate": "2025-12-31T23:59:59Z",
@@ -37,8 +74,12 @@
       "name": "Mutual Fund Recommendation",
       "status": "Active",
       "audienceSummary": "Product Recommendation = Mutual Fund",
-      "contentSources": ["ProductReco"],
-      "contentFiles": ["kbank-mutual-fund.cms"],
+      "contentSources": [
+        "ProductReco"
+      ],
+      "contentFiles": [
+        "kbank-mutual-fund.cms"
+      ],
       "priority": 85,
       "startDate": "2025-09-21T00:00:00Z",
       "endDate": "2025-12-31T23:59:59Z",
@@ -53,8 +94,12 @@
       "name": "Bancassurance Recommendation",
       "status": "Active",
       "audienceSummary": "Product Recommendation = Bancassurance",
-      "contentSources": ["ProductReco"],
-      "contentFiles": ["kbank-bancassurance.cms"],
+      "contentSources": [
+        "ProductReco"
+      ],
+      "contentFiles": [
+        "kbank-bancassurance.cms"
+      ],
       "priority": 80,
       "startDate": "2025-09-20T00:00:00Z",
       "endDate": "2025-12-31T23:59:59Z",
@@ -69,8 +114,12 @@
       "name": "LINE BC Register - Broadcast Campaign",
       "status": "Active",
       "audienceSummary": "All Users (Broadcast Content)",
-      "contentSources": ["Broadcast"],
-      "contentFiles": ["line-bc-kpoint-promo.cms"],
+      "contentSources": [
+        "Broadcast"
+      ],
+      "contentFiles": [
+        "line-bc-kpoint-promo.cms"
+      ],
       "priority": 50,
       "startDate": "2025-09-19T00:00:00Z",
       "endDate": "2025-12-31T23:59:59Z",
@@ -79,11 +128,65 @@
       "fallback": null,
       "createdAt": "2025-09-19T12:00:00Z",
       "updatedAt": "2025-09-19T13:10:00Z"
+    },
+    {
+      "id": "0de15485-16f7-4680-9354-9b570c7d12ae",
+      "name": "Untitled Rule",
+      "status": "Draft",
+      "audienceSummary": "",
+      "contentSources": [],
+      "startDate": "2025-09-23T12:44:00.956Z",
+      "endDate": "2025-12-22T12:44:00.958Z",
+      "audience": {
+        "id": "condition_1758631435879",
+        "name": "Flexible Audience Conditions",
+        "rootNode": {
+          "id": "node_1758631435879",
+          "type": "group",
+          "operator": "AND",
+          "children": [
+            {
+              "id": "condition_1758631380336",
+              "type": "condition",
+              "attributeId": "location",
+              "comparison": "in",
+              "value": "Bangkok CBD",
+              "depth": 1,
+              "isValid": true
+            },
+            {
+              "id": "condition_1758631406120",
+              "type": "condition",
+              "attributeId": "distance_to_mall",
+              "comparison": "less_than",
+              "value": 10,
+              "depth": 1,
+              "isValid": true
+            },
+            {
+              "id": "condition_1758631425662",
+              "type": "condition",
+              "attributeId": "aum_band",
+              "comparison": "equals",
+              "value": "1–5M",
+              "depth": 1,
+              "isValid": true
+            }
+          ],
+          "depth": 0,
+          "isValid": true
+        },
+        "lastModified": "2025-09-23T12:43:55.879Z"
+      },
+      "content": null,
+      "fallback": null,
+      "createdAt": "2025-09-23T12:44:00.956Z",
+      "updatedAt": "2025-09-23T12:44:00.956Z"
     }
   ],
   "meta": {
-    "lastId": 7,
+    "lastId": 8,
     "version": "1.0",
-    "updatedAt": "2025-09-23T14:30:00Z"
+    "updatedAt": "2025-09-23T12:44:00.958Z"
   }
 }
