@@ -82,7 +82,9 @@ const RuleEditor: React.FC = () => {
     try {
       const response = await rulesApi.getRule(ruleId);
       if (response.success && response.data) {
+        console.log('Loaded rule data:', response);
         const rule = response.data;
+        console.log('Rule data:', rule);
         setRuleData({
           name: rule.name,
           audience: rule.audience,
@@ -354,6 +356,45 @@ const RuleEditor: React.FC = () => {
     });
   };
 
+  // Convert AudienceCondition to FlexibleCondition[] for ImprovedConditionBuilder
+  const convertAudienceToFlexibleConditions = (audience: AudienceCondition | null): any[] => {
+    console.log('Converting audience:', audience);
+    if (!audience || !audience.rootNode || !audience.rootNode.children) {
+      console.log('No audience data to convert');
+      return [];
+    }
+
+    // Extract conditions from the tree structure and flatten them
+    const extractConditions = (node: any, isFirst: boolean = true): any[] => {
+      console.log('Extracting conditions from node:', node);
+      if (node.type === 'condition') {
+        const condition = {
+          id: node.id,
+          attributeId: node.attributeId,
+          operator: node.comparison,
+          value: node.value,
+          logicalOperator: isFirst ? undefined : node.operator || 'AND'
+        };
+        console.log('Created condition:', condition);
+        return [condition];
+      } else if (node.type === 'group' && node.children) {
+        // Flatten all conditions from the group
+        const conditions: any[] = [];
+        node.children.forEach((child: any) => {
+          const childConditions = extractConditions(child, conditions.length === 0);
+          conditions.push(...childConditions);
+        });
+        console.log('Extracted conditions from group:', conditions);
+        return conditions;
+      }
+      return [];
+    };
+
+    const result = extractConditions(audience.rootNode);
+    console.log('Converted conditions:', result);
+    return result;
+  };
+
   // Convert current rule data to format expected by PreviewSection
   const convertRuleDataForPreview = (): Rule[] => {
     if (!ruleData.audience && !ruleData.content) {
@@ -409,6 +450,7 @@ const RuleEditor: React.FC = () => {
           {useImprovedUX ? (
             <ImprovedConditionBuilder
               onConditionChange={handleImprovedConditionChange}
+              initialConditions={convertAudienceToFlexibleConditions(ruleData.audience)}
             />
           ) : (
             <ConditionBuilder

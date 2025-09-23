@@ -59,9 +59,24 @@ class RulesApiService {
         };
       }
 
+      // If the response has a 'data' field, it's a single resource response
+      if ('data' in data) {
+        return data;
+      }
+      // If it has a 'rules' field, it's a list response
+      if ('rules' in data) {
+        return {
+          success: true,
+          data: {
+            rules: data.rules,
+            meta: data.meta
+          }
+        };
+      }
+      // Otherwise just return the response as is
       return {
         success: true,
-        data: data,
+        data: data
       };
     } catch (error) {
       return {

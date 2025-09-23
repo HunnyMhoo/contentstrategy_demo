@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Select, Space, Tag, Alert, Divider, Input, InputNumber } from 'antd';
 import { PlusOutlined, DeleteOutlined, UserOutlined, TrophyOutlined, DollarOutlined } from '@ant-design/icons';
 import type { ComparisonOperator, ConditionOperator } from '../types';
@@ -15,6 +15,7 @@ interface FlexibleCondition {
 
 interface ImprovedConditionBuilderProps {
   onConditionChange: (conditions: FlexibleCondition[]) => void;
+  initialConditions?: FlexibleCondition[];
 }
 
 // Available operators for different field types
@@ -35,16 +36,28 @@ const LOGICAL_OPERATORS: { value: ConditionOperator; label: string; color: strin
 
 
 const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({ 
-  onConditionChange 
+  onConditionChange,
+  initialConditions = []
 }) => {
-  const [conditions, setConditions] = useState<FlexibleCondition[]>([]);
+  const [conditions, setConditions] = useState<FlexibleCondition[]>(() => {
+    console.log('Setting initial conditions:', initialConditions);
+    return initialConditions;
+  });
   const [isAddingCondition, setIsAddingCondition] = useState(false);
+
+  // Update conditions when initialConditions change
+  useEffect(() => {
+    console.log('ImprovedConditionBuilder received initialConditions:', initialConditions);
+    setConditions(initialConditions);
+  }, [initialConditions]);
 
   // Get all available attributes grouped by category
   const customerAttributes = getAttributesByGroup('customer');
   const activityAttributes = getAttributesByGroup('activity');
   const customAttributes = getAttributesByGroup('custom');
   const allAttributes = [...customerAttributes, ...activityAttributes, ...customAttributes];
+  
+  console.log('ImprovedConditionBuilder render - current conditions:', conditions);
 
   const addNewCondition = () => {
     const newCondition: FlexibleCondition = {

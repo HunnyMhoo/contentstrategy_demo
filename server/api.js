@@ -80,7 +80,7 @@ app.get('/api/rules/:id', async (req, res) => {
     
     res.json({
       success: true,
-      rule
+      data: rule
     });
   } catch (error) {
     res.status(500).json({
@@ -119,7 +119,7 @@ app.post('/api/rules', async (req, res) => {
     if (success) {
       res.status(201).json({
         success: true,
-        rule: newRule
+        data: newRule
       });
     } else {
       res.status(500).json({
@@ -164,7 +164,7 @@ app.put('/api/rules/:id', async (req, res) => {
     if (success) {
       res.json({
         success: true,
-        rule: updatedRule
+        data: updatedRule
       });
     } else {
       res.status(500).json({
@@ -200,7 +200,7 @@ app.delete('/api/rules/:id', async (req, res) => {
     if (success) {
       res.json({
         success: true,
-        rule: deletedRule
+        data: deletedRule
       });
     } else {
       res.status(500).json({
@@ -247,7 +247,7 @@ app.post('/api/rules/:id/duplicate', async (req, res) => {
     if (success) {
       res.status(201).json({
         success: true,
-        rule: duplicatedRule
+        data: duplicatedRule
       });
     } else {
       res.status(500).json({
