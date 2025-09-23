@@ -99,6 +99,7 @@ app.post('/api/rules', async (req, res) => {
     const newRule = {
       id: uuidv4(),
       name: req.body.name || 'Untitled Rule',
+      priority: req.body.priority || 80, // Default priority
       status: req.body.status || 'Draft',
       audienceSummary: req.body.audienceSummary || '',
       contentSources: req.body.contentSources || [],

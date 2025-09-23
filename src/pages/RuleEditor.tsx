@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, Button, Space, Typography, Alert, Modal, message, Spin } from 'antd';
+import { Tabs, Button, Space, Typography, Alert, Modal, message, Spin, InputNumber } from 'antd';
 import { SaveOutlined, CopyOutlined, PlayCircleOutlined, CheckCircleOutlined, WarningOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { rulesApi } from '../services/rulesApi';
@@ -27,6 +27,7 @@ interface RuleValidationState {
 
 interface RuleData {
   name: string;
+  priority: number;
   audience: AudienceCondition | null;
   content: ContentConfigurationType | null;
   fallback: FallbackConfigurationType | null;
@@ -54,6 +55,7 @@ const RuleEditor: React.FC = () => {
   // Rule data state
   const [ruleData, setRuleData] = useState<RuleData>({
     name: isNewRule ? 'Untitled Rule' : `Rule ${id}`,
+    priority: 80, // Default priority
     audience: null,
     content: null,
     fallback: null,
@@ -87,6 +89,7 @@ const RuleEditor: React.FC = () => {
         console.log('Rule data:', rule);
         setRuleData({
           name: rule.name,
+          priority: rule.priority || 80, // Use existing priority or default
           audience: rule.audience,
           content: rule.content,
           fallback: rule.fallback,
@@ -278,6 +281,7 @@ const RuleEditor: React.FC = () => {
     try {
       const saveData = {
         name: ruleData.name,
+        priority: ruleData.priority,
         status: 'Draft' as const,
         audienceSummary: generateAudienceSummary(ruleData.audience),
         contentSources: [], // Will be generated from content config
@@ -379,6 +383,14 @@ const RuleEditor: React.FC = () => {
 
   const handleFallbackValidationChange = (validation: FallbackValidationResult) => {
     setFallbackValidation(validation);
+  };
+
+  // Handle priority change
+  const handlePriorityChange = (value: number | null) => {
+    if (value !== null && value >= 1 && value <= 100) {
+      setRuleData(prev => ({ ...prev, priority: value }));
+      setHasUnsavedChanges(true);
+    }
   };
 
   // Handle improved condition builder changes
@@ -522,7 +534,7 @@ const RuleEditor: React.FC = () => {
       status: 'Active', // For preview purposes, treat as active
       audienceSummary: ruleData.audience ? 'Custom audience conditions configured' : 'No audience configured',
       contentSources,
-      priority: ruleData.content?.priority || 80, // Use configured priority or default
+      priority: ruleData.priority, // Use rule-level priority
       startDate: new Date().toISOString(),
       endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days from now
       audience: ruleData.audience,
@@ -670,6 +682,7 @@ const RuleEditor: React.FC = () => {
 {`{
   "id": "${id || 'new'}",
   "name": "${ruleData.name}",
+  "priority": ${ruleData.priority},
   "status": "Draft",
   "audience": ${JSON.stringify(ruleData.audience, null, 2)},
   "content": ${JSON.stringify(ruleData.content, null, 2)},
@@ -701,18 +714,35 @@ const RuleEditor: React.FC = () => {
 
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
-        <div className="flex justify-between items-center">
-          <div>
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
             <Title level={2} className="!mb-2">
               {isNewRule ? 'Create New Rule' : `Edit Rule ${id}`}
               {hasUnsavedChanges && <span className="text-orange-500 ml-2">*</span>}
             </Title>
-            <p className="text-gray-600 m-0">
+            <p className="text-gray-600 m-0 mb-4">
               Configure audience targeting and content for the "For You" placement
               {hasUnsavedChanges && (
                 <span className="text-orange-500 ml-2 text-sm">(Unsaved changes)</span>
               )}
             </p>
+            {/* Priority Setting */}
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-blue-900">Rule Priority:</span>
+                <InputNumber
+                  min={1}
+                  max={100}
+                  value={ruleData.priority}
+                  onChange={handlePriorityChange}
+                  className="w-24"
+                  size="middle"
+                />
+              </div>
+              <span className="text-xs text-blue-600">
+                Higher values = higher priority (1-100)
+              </span>
+            </div>
           </div>
           <Space>
             <Button

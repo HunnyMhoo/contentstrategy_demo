@@ -25,6 +25,7 @@ export interface RulesListResponse {
 
 export interface CreateRuleRequest {
   name?: string;
+  priority?: number;
   status?: 'Draft' | 'Active' | 'Inactive';
   audienceSummary?: string;
   contentSources?: string[];
