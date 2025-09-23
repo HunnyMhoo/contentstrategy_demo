@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Tag, Space, Typography, Card, message, Spin } from 'antd';
-import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Typography, Card, message, Spin, Badge, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, TrophyOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import type { Rule } from '../lib/mockData';
@@ -88,35 +88,45 @@ const RulesList: React.FC = () => {
     }
   };
 
-  const getContentSourceColor = (source: string) => {
-    switch (source) {
-      case 'TargetedLead':
-        return 'gold';
-      case 'ProductReco':
-        return 'blue';
-      case 'CMS':
-        return 'default';
-      default:
-        return 'default';
-    }
+
+  const renderContentSources = (sources: string[], record: Rule) => {
+    const contentFiles = record.contentFiles || [];
+    
+    return (
+      <div>
+        {/* CMS Content Files */}
+        {contentFiles.length > 0 ? (
+          <Space size="small" wrap>
+            {contentFiles.map((file, index) => (
+              <Tooltip key={index} title={`CMS Content File: ${file}`}>
+                <Tag 
+                  icon={<FileTextOutlined />}
+                  className="text-xs bg-gray-50 border-gray-200 text-gray-700"
+                >
+                  {file.replace('.cms', '')}
+                </Tag>
+              </Tooltip>
+            ))}
+          </Space>
+        ) : (
+          <span className="text-gray-400 text-sm italic">No content files</span>
+        )}
+      </div>
+    );
   };
 
-  const renderContentSources = (sources: string[]) => {
-    return (
-      <Space size="small" wrap>
-        {sources.map((source) => (
-          <Tag 
-            key={source} 
-            color={getContentSourceColor(source)}
-            className="text-xs"
-          >
-            {source === 'TargetedLead' ? 'Targeted Lead' : 
-             source === 'ProductReco' ? 'Product Reco' : 
-             'CMS'}
-          </Tag>
-        ))}
-      </Space>
-    );
+  const getPriorityColor = (priority: number) => {
+    if (priority >= 90) return '#f50'; // High priority - red
+    if (priority >= 75) return '#fa8c16'; // Medium-high - orange  
+    if (priority >= 60) return '#faad14'; // Medium - yellow
+    return '#52c41a'; // Low priority - green
+  };
+
+  const getPriorityLabel = (priority: number) => {
+    if (priority >= 90) return 'High';
+    if (priority >= 75) return 'Med-High';
+    if (priority >= 60) return 'Medium';
+    return 'Low';
   };
 
   const columns: ColumnsType<Rule> = [
@@ -128,7 +138,7 @@ const RulesList: React.FC = () => {
       render: (name, record) => (
         <Button 
           type="link" 
-          className="p-0 h-auto font-medium text-blue-600"
+          className="p-0 h-auto font-medium text-blue-600 hover:text-blue-800"
           onClick={() => {
             logDemoEvent('rule_list_click', { ruleId: record.id, ruleName: name });
             navigate(`/rules/${record.id}`);
@@ -139,12 +149,43 @@ const RulesList: React.FC = () => {
       ),
     },
     {
+      title: (
+        <Space>
+          <TrophyOutlined />
+          Priority
+        </Space>
+      ),
+      dataIndex: 'priority',
+      key: 'priority',
+      width: 120,
+      sorter: (a, b) => a.priority - b.priority,
+      sortDirections: ['descend', 'ascend'],
+      defaultSortOrder: 'descend',
+      render: (priority) => (
+        <div className="flex items-center space-x-2">
+          <Badge 
+            count={priority} 
+            style={{ 
+              backgroundColor: getPriorityColor(priority),
+              fontWeight: 'bold',
+              minWidth: '28px'
+            }} 
+          />
+          <span className="text-xs text-gray-500 font-medium">
+            {getPriorityLabel(priority)}
+          </span>
+        </div>
+      ),
+    },
+    {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
       width: 100,
       render: (status) => (
-        <Tag color={getStatusColor(status)}>{status}</Tag>
+        <Tag color={getStatusColor(status)} className="font-medium">
+          {status}
+        </Tag>
       ),
     },
     {
@@ -153,27 +194,28 @@ const RulesList: React.FC = () => {
       key: 'audienceSummary',
       ellipsis: true,
       render: (text) => (
-        <span className="text-gray-600 text-sm">{text}</span>
+        <span className="text-gray-600 text-sm leading-relaxed">{text}</span>
       ),
     },
     {
       title: 'Content Sources',
       dataIndex: 'contentSources',
       key: 'contentSources',
-      width: 180,
-      render: (sources) => renderContentSources(sources),
+      width: 240,
+      render: (sources, record) => renderContentSources(sources, record),
     },
     {
       title: 'Schedule',
       key: 'schedule',
-      width: 200,
+      width: 180,
       render: (_, record) => {
         const startDate = new Date(record.startDate).toLocaleDateString();
         const endDate = new Date(record.endDate).toLocaleDateString();
         return (
-          <span className="text-gray-600 text-sm">
-            {startDate} - {endDate}
-          </span>
+          <div className="text-gray-600 text-sm">
+            <div className="font-medium">{startDate}</div>
+            <div className="text-gray-400">to {endDate}</div>
+          </div>
         );
       },
     },
@@ -181,7 +223,7 @@ const RulesList: React.FC = () => {
       title: 'Last Modified',
       dataIndex: 'updatedAt',
       key: 'updatedAt',
-      width: 150,
+      width: 140,
       render: (text) => (
         <span className="text-gray-500 text-sm">
           {new Date(text).toLocaleDateString()}
@@ -231,11 +273,11 @@ const RulesList: React.FC = () => {
   ];
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
-          <Title level={2} className="!mb-2">Rules</Title>
-          <p className="text-gray-600 m-0">
+          <Title level={2} className="!mb-2 text-gray-800">Rules</Title>
+          <p className="text-gray-600 m-0 text-base">
             Manage your rule configurations for the "For You" placement
           </p>
         </div>
@@ -247,13 +289,13 @@ const RulesList: React.FC = () => {
             logDemoEvent('create_rule_click', { source: 'rules_list' });
             navigate('/rules/new');
           }}
-          className="shadow-sm sm:flex-shrink-0"
+          className="shadow-md sm:flex-shrink-0 bg-blue-600 hover:bg-blue-700 border-blue-600 hover:border-blue-700 h-10 px-6"
         >
           Create New Rule
         </Button>
       </div>
 
-      <Card className="shadow-sm">
+      <Card className="shadow-lg border-0 rounded-lg overflow-hidden">
         <Spin spinning={loading}>
           <Table
             columns={columns}
@@ -265,12 +307,38 @@ const RulesList: React.FC = () => {
               showQuickJumper: true,
               showTotal: (total, range) =>
                 `${range[0]}-${range[1]} of ${total} rules`,
+              className: "px-4 py-3 bg-gray-50"
             }}
-            scroll={{ x: 1000 }}
-            className="ant-table-responsive"
+            scroll={{ x: 1200 }}
+            className="rules-table"
+            rowClassName="hover:bg-blue-50 transition-colors duration-200"
+            size="middle"
           />
         </Spin>
       </Card>
+      
+      <style jsx>{`
+        .rules-table .ant-table-thead > tr > th {
+          background-color: #f8fafc;
+          border-bottom: 2px solid #e2e8f0;
+          font-weight: 600;
+          color: #374151;
+          padding: 16px 12px;
+        }
+        
+        .rules-table .ant-table-tbody > tr > td {
+          padding: 16px 12px;
+          border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .rules-table .ant-table-tbody > tr:last-child > td {
+          border-bottom: none;
+        }
+        
+        .rules-table .ant-table-row:hover {
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+        }
+      `}</style>
     </div>
   );
 };
