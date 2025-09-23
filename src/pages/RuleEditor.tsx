@@ -3,7 +3,8 @@ import { Tabs, Button, Space, Typography, Alert, Modal } from 'antd';
 import { SaveOutlined, CopyOutlined, PlayCircleOutlined, CheckCircleOutlined, WarningOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import ConditionBuilder from '../features/rules/components/ConditionBuilder';
-import type { AudienceCondition, ValidationResult } from '../features/rules/types';
+import ContentConfiguration from '../features/rules/components/content/ContentConfiguration';
+import type { AudienceCondition, ValidationResult, ContentConfiguration as ContentConfigurationType, ContentValidationResult } from '../features/rules/types';
 
 const { Title } = Typography;
 
@@ -20,7 +21,7 @@ interface RuleValidationState {
 interface RuleData {
   name: string;
   audience: AudienceCondition | null;
-  content: any;
+  content: ContentConfigurationType | null;
   fallback: any;
   schedule: any;
 }
@@ -37,6 +38,7 @@ const RuleEditor: React.FC = () => {
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [audienceValidation, setAudienceValidation] = useState<ValidationResult>({ isValid: false, errors: [], warnings: [] });
+  const [contentValidation, setContentValidation] = useState<ContentValidationResult>({ isValid: false, errors: [], warnings: [], hasContent: false, priorityConflicts: [] });
   
   // Rule data state
   const [ruleData, setRuleData] = useState<RuleData>({
@@ -91,7 +93,10 @@ const RuleEditor: React.FC = () => {
         if (audienceValidation.warnings.length > 0) return 'warning';
         return audienceValidation.isValid ? 'valid' : 'error';
       case 'content':
-        return ruleData.content ? 'valid' : 'empty';
+        if (!ruleData.content) return 'empty';
+        if (contentValidation.errors.length > 0) return 'error';
+        if (contentValidation.warnings.length > 0) return 'warning';
+        return contentValidation.isValid && contentValidation.hasContent ? 'valid' : 'error';
       case 'fallback':
         return ruleData.fallback ? 'valid' : 'empty';
       case 'schedule':
@@ -188,6 +193,15 @@ const RuleEditor: React.FC = () => {
     setAudienceValidation(validation);
   };
 
+  const handleContentChange = (content: ContentConfigurationType) => {
+    setRuleData(prev => ({ ...prev, content }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleContentValidationChange = (validation: ContentValidationResult) => {
+    setContentValidation(validation);
+  };
+
   const tabItems = [
     {
       key: 'audience',
@@ -217,37 +231,11 @@ const RuleEditor: React.FC = () => {
       ),
       children: (
         <div className="p-6">
-          <Alert
-            message="Content Configuration Coming Soon"
-            description="Content source selection and template configuration will be implemented next."
-            type="info"
-            showIcon
-            className="mb-4"
+          <ContentConfiguration
+            configuration={ruleData.content || undefined}
+            onChange={handleContentChange}
+            onValidationChange={handleContentValidationChange}
           />
-          <div className="mb-4">
-            <Button 
-              type="dashed" 
-              onClick={() => {
-                setRuleData(prev => ({ ...prev, content: { configured: true } }));
-                setHasUnsavedChanges(true);
-              }}
-              className="mb-2"
-            >
-              Mock: Mark Content as Configured
-            </Button>
-            <p className="text-sm text-gray-500">
-              Click to simulate content configuration for validation demo
-            </p>
-          </div>
-          <p className="text-gray-600">
-            This section will allow you to configure:
-          </p>
-          <ul className="text-gray-600 ml-4">
-            <li>Content sources (Targeted Lead, Product Recommendations, CMS)</li>
-            <li>Template selection with visual previews</li>
-            <li>Max yield configuration (1-5 tiles)</li>
-            <li>Tokenized copy with fallback syntax</li>
-          </ul>
         </div>
       ),
     },

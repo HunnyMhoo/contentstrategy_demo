@@ -78,3 +78,56 @@ export interface ConditionTestResult {
     reason: string;
   }[];
 }
+
+// Content Configuration Types (US-006)
+export type ContentSourceType = 'CMS' | 'TargetedLead' | 'ProductReco';
+
+export interface ContentTemplate {
+  id: string;
+  name: string;
+  description: string;
+  sourceType: ContentSourceType;
+  previewImage?: string;
+  tokenFields: string[]; // Available tokens like 'title', 'description', etc.
+}
+
+export interface TokenizedCopy {
+  template: string; // e.g., "{{lead.title|Our pick}} - {{lead.description|Great opportunity}}"
+  preview: string; // Rendered with sample data
+}
+
+export interface CMSContentConfig {
+  enabled: boolean;
+  selectedTemplate?: ContentTemplate;
+  tokenizedCopy?: TokenizedCopy;
+  maxYield: number; // 1-5 tiles from this source
+}
+
+export interface OfferingContentConfig {
+  enabled: boolean; // Manual toggle by user
+  targetedLead?: {
+    enabled: boolean;
+    selectedTemplate?: ContentTemplate;
+    tokenizedCopy?: TokenizedCopy;
+    maxYield: number;
+  };
+  productReco?: {
+    enabled: boolean;
+    selectedTemplate?: ContentTemplate;
+    tokenizedCopy?: TokenizedCopy;
+    maxYield: number;
+  };
+}
+
+export interface ContentConfiguration {
+  cms: CMSContentConfig;
+  offering: OfferingContentConfig;
+  priority: number; // Rule priority for "Special for you" placement
+  totalMaxYield: number; // Total tiles this rule can produce (1-5)
+}
+
+// Content validation result
+export interface ContentValidationResult extends ValidationResult {
+  hasContent: boolean;
+  priorityConflicts: string[];
+}
