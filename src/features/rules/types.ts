@@ -131,3 +131,36 @@ export interface ContentValidationResult extends ValidationResult {
   hasContent: boolean;
   priorityConflicts: string[];
 }
+
+// Fallback Configuration Types (US-007)
+export type FallbackScenario = 'ineligible_audience' | 'empty_supply';
+export type FallbackOption = 'cms_content' | 'default_tile' | 'none';
+
+export interface FallbackContentConfig {
+  option: FallbackOption;
+  cmsTemplate?: ContentTemplate; // When option is 'cms_content'
+  defaultTileContent?: {
+    title: string;
+    description: string;
+    imageUrl?: string;
+  }; // When option is 'default_tile'
+  tokenizedCopy?: TokenizedCopy;
+}
+
+export interface FallbackScenarioConfig {
+  scenario: FallbackScenario;
+  enabled: boolean;
+  content: FallbackContentConfig;
+  reason: string; // Explanation for why this fallback triggers
+}
+
+export interface FallbackConfiguration {
+  ineligibleAudience: FallbackScenarioConfig;
+  emptySupply: FallbackScenarioConfig;
+}
+
+// Fallback validation result
+export interface FallbackValidationResult extends ValidationResult {
+  hasFallbacks: boolean;
+  scenarioErrors: Record<FallbackScenario, string[]>;
+}

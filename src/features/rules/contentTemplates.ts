@@ -156,6 +156,63 @@ export const sampleTokenData = {
   },
 };
 
+// Fallback Content Templates (US-007)
+export const fallbackCMSTemplates: ContentTemplate[] = [
+  {
+    id: 'fallback_general_content',
+    name: 'General Interest Content',
+    description: 'Generic content for when specific targeting fails',
+    sourceType: 'CMS',
+    tokenFields: ['title', 'description', 'category', 'readTime'],
+  },
+  {
+    id: 'fallback_educational',
+    name: 'Educational Fallback',
+    description: 'Educational content as safe fallback option',
+    sourceType: 'CMS',
+    tokenFields: ['topic', 'learningPoints', 'difficulty', 'duration'],
+  },
+  {
+    id: 'fallback_promotional',
+    name: 'Promotional Fallback',
+    description: 'General promotional content for fallback scenarios',
+    sourceType: 'CMS',
+    tokenFields: ['offer', 'benefits', 'callToAction', 'validUntil'],
+  },
+];
+
+// Default tile content samples for fallback scenarios
+export const defaultTileSamples = {
+  ineligible_audience: {
+    title: 'Explore Our Services',
+    description: 'Discover financial solutions tailored for your needs',
+    imageUrl: '/images/general-services.jpg',
+  },
+  empty_supply: {
+    title: 'More Content Coming Soon',
+    description: 'We\'re preparing personalized content just for you',
+    imageUrl: '/images/coming-soon.jpg',
+  },
+};
+
+// Sample fallback data for token rendering
+export const fallbackSampleData = {
+  general: {
+    title: 'Financial Planning 101',
+    description: 'Essential tips for managing your finances effectively',
+    category: 'Personal Finance',
+    readTime: '3 min',
+    topic: 'Investment Basics',
+    learningPoints: ['Risk assessment', 'Portfolio diversification', 'Long-term planning'],
+    difficulty: 'Beginner',
+    duration: '5 minutes',
+    offer: '0.5% bonus interest rate',
+    benefits: ['Higher returns', 'Flexible terms', 'No hidden fees'],
+    callToAction: 'Apply Now',
+    validUntil: '2025-12-31',
+  },
+};
+
 // Helper function to render tokenized copy with sample data
 export const renderTokenizedCopy = (template: string, sourceType: 'CMS' | 'TargetedLead' | 'ProductReco'): string => {
   const tokenRegex = /\{\{([^}]+)\}\}/g;

@@ -4,7 +4,8 @@ import { SaveOutlined, CopyOutlined, PlayCircleOutlined, CheckCircleOutlined, Wa
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import ConditionBuilder from '../features/rules/components/ConditionBuilder';
 import ContentConfiguration from '../features/rules/components/content/ContentConfiguration';
-import type { AudienceCondition, ValidationResult, ContentConfiguration as ContentConfigurationType, ContentValidationResult } from '../features/rules/types';
+import FallbackConfiguration from '../features/rules/components/fallback/FallbackConfiguration';
+import type { AudienceCondition, ValidationResult, ContentConfiguration as ContentConfigurationType, ContentValidationResult, FallbackConfiguration as FallbackConfigurationType, FallbackValidationResult } from '../features/rules/types';
 
 const { Title } = Typography;
 
@@ -22,7 +23,7 @@ interface RuleData {
   name: string;
   audience: AudienceCondition | null;
   content: ContentConfigurationType | null;
-  fallback: any;
+  fallback: FallbackConfigurationType | null;
   schedule: any;
 }
 
@@ -39,6 +40,7 @@ const RuleEditor: React.FC = () => {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [audienceValidation, setAudienceValidation] = useState<ValidationResult>({ isValid: false, errors: [], warnings: [] });
   const [contentValidation, setContentValidation] = useState<ContentValidationResult>({ isValid: false, errors: [], warnings: [], hasContent: false, priorityConflicts: [] });
+  const [fallbackValidation, setFallbackValidation] = useState<FallbackValidationResult>({ isValid: false, errors: [], warnings: [], hasFallbacks: false, scenarioErrors: { ineligible_audience: [], empty_supply: [] } });
   
   // Rule data state
   const [ruleData, setRuleData] = useState<RuleData>({
@@ -98,7 +100,10 @@ const RuleEditor: React.FC = () => {
         if (contentValidation.warnings.length > 0) return 'warning';
         return contentValidation.isValid && contentValidation.hasContent ? 'valid' : 'error';
       case 'fallback':
-        return ruleData.fallback ? 'valid' : 'empty';
+        if (!ruleData.fallback) return 'empty';
+        if (fallbackValidation.errors.length > 0) return 'error';
+        if (fallbackValidation.warnings.length > 0) return 'warning';
+        return fallbackValidation.isValid ? 'valid' : 'error';
       case 'schedule':
         return ruleData.schedule ? 'valid' : 'empty';
       case 'preview':
@@ -202,6 +207,15 @@ const RuleEditor: React.FC = () => {
     setContentValidation(validation);
   };
 
+  const handleFallbackChange = (fallback: FallbackConfigurationType) => {
+    setRuleData(prev => ({ ...prev, fallback }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleFallbackValidationChange = (validation: FallbackValidationResult) => {
+    setFallbackValidation(validation);
+  };
+
   const tabItems = [
     {
       key: 'audience',
@@ -249,28 +263,11 @@ const RuleEditor: React.FC = () => {
       ),
       children: (
         <div className="p-6">
-          <Alert
-            message="Fallback Plan Coming Soon"
-            description="Fallback configuration for ineligible audiences and empty supply scenarios."
-            type="info"
-            showIcon
-            className="mb-4"
+          <FallbackConfiguration
+            configuration={ruleData.fallback || undefined}
+            onChange={handleFallbackChange}
+            onValidationChange={handleFallbackValidationChange}
           />
-          <div className="mb-4">
-            <Button 
-              type="dashed" 
-              onClick={() => {
-                setRuleData(prev => ({ ...prev, fallback: { configured: true } }));
-                setHasUnsavedChanges(true);
-              }}
-              className="mb-2"
-            >
-              Mock: Mark Fallback as Configured
-            </Button>
-            <p className="text-sm text-gray-500">
-              Click to simulate fallback configuration for validation demo
-            </p>
-          </div>
         </div>
       ),
     },
