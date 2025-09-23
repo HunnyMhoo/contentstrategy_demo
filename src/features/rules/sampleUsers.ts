@@ -1,130 +1,139 @@
 import type { SampleUser } from './types';
 
-// Sample users for testing conditions as specified in US-004
+// Sample users for demo scenarios - Kasikornbank business demo
 export const SAMPLE_USERS: SampleUser[] = [
   {
     user_id: 'user_001',
-    name: 'Sarah (High-Value, Has Targeted Lead)',
+    name: 'Somchai (Near Shopping Mall - Location Based)',
     customer: {
-      targeted_lead: true,
-      offering_types: ['Investment'],
-      aum_band: '5–20M',
-      risk_band: 'Aggressive',
-      customer_tier: 'Platinum',
-      account_age_months: 36
+      targeted_lead: false,
+      offering_types: ['Credit Card'],
+      aum_band: '1–5M',
+      risk_band: 'Balanced',
+      customer_tier: 'Gold',
+      account_age_months: 24,
+      location: 'Shopping Area',
+      distance_to_mall: 300 // meters
     },
     activity: {
-      last_login_days: 2,
-      page_views_30d: 45,
-      product_interactions: ['Viewed Details', 'Added to Watchlist', 'Calculated Returns'],
+      last_login_days: 1,
+      page_views_30d: 25,
+      product_interactions: ['Viewed Credit Cards', 'Compared Rates'],
       has_recent_transaction: true,
-      session_duration_avg: 12.5
+      session_duration_avg: 8.5
     },
     custom: {
-      marketing_segment: 'High-Value',
-      campaign_tags: ['Q4-Promo', 'Wealth-Focus'],
-      custom_score: 92,
-      feature_flags: ['beta-features', 'premium-ui', 'advanced-analytics']
+      marketing_segment: 'Location-Based',
+      campaign_tags: ['Shopping-Promo', 'Credit-Card'],
+      custom_score: 85,
+      feature_flags: ['location-services', 'push-notifications']
     }
   },
   {
     user_id: 'user_002',
-    name: 'Mike (Standard, No Targeted Lead)',
+    name: 'Niran (Has Express Loan Targeted Lead)',
     customer: {
-      targeted_lead: false,
-      offering_types: ['Savings'],
-      aum_band: '1–5M',
-      risk_band: 'Cautious',
-      customer_tier: 'Silver',
-      account_age_months: 18
+      targeted_lead: true,
+      targeted_lead_type: 'Express Loan',
+      offering_types: ['Loan'],
+      aum_band: '5–20M',
+      risk_band: 'Balanced',
+      customer_tier: 'Platinum',
+      account_age_months: 36,
+      location: 'Bangkok CBD'
     },
     activity: {
-      last_login_days: 7,
-      page_views_30d: 12,
-      product_interactions: ['Viewed Details'],
+      last_login_days: 2,
+      page_views_30d: 35,
+      product_interactions: ['Loan Calculator', 'Document Upload', 'Rate Inquiry'],
       has_recent_transaction: false,
-      session_duration_avg: 5.2
+      session_duration_avg: 15.2
     },
     custom: {
-      marketing_segment: 'Retention',
-      campaign_tags: ['New-Year'],
-      custom_score: 65,
-      feature_flags: ['mobile-enhanced']
+      marketing_segment: 'High-Intent-Loan',
+      campaign_tags: ['Express-Loan', 'Fast-Approval'],
+      custom_score: 95,
+      feature_flags: ['express-processing', 'priority-support']
     }
   },
   {
     user_id: 'user_003',
-    name: 'Jennifer (Growth, Mixed Offerings)',
+    name: 'Apinya (Mutual Fund Recommendation)',
     customer: {
-      targeted_lead: true,
-      offering_types: ['Investment', 'Insurance'],
+      targeted_lead: false,
+      offering_types: ['Investment', 'Mutual Fund'],
       aum_band: '1–5M',
-      risk_band: 'Balanced',
+      risk_band: 'Moderate',
       customer_tier: 'Gold',
-      account_age_months: 24
+      account_age_months: 18,
+      location: 'Sukhumvit',
+      product_recommendation: 'Mutual Fund'
     },
     activity: {
-      last_login_days: 1,
-      page_views_30d: 28,
-      product_interactions: ['Viewed Details', 'Downloaded Brochure'],
+      last_login_days: 3,
+      page_views_30d: 22,
+      product_interactions: ['Fund Performance', 'Risk Assessment', 'Portfolio Review'],
       has_recent_transaction: true,
-      session_duration_avg: 8.7
+      session_duration_avg: 12.8
     },
     custom: {
-      marketing_segment: 'Growth',
-      campaign_tags: ['Digital-First', 'Wealth-Focus'],
+      marketing_segment: 'Investment-Growth',
+      campaign_tags: ['Mutual-Fund', 'Investment-Education'],
       custom_score: 78,
-      feature_flags: ['premium-ui', 'advanced-analytics']
+      feature_flags: ['investment-tools', 'fund-analyzer']
     }
   },
   {
     user_id: 'user_004',
-    name: 'David (Low Activity, No Lead)',
+    name: 'Kamon (Bancassurance Recommendation)',
     customer: {
       targeted_lead: false,
-      offering_types: ['Loan', 'Savings'],
-      aum_band: '<1M',
-      risk_band: 'Cautious',
-      customer_tier: 'Bronze',
-      account_age_months: 6
+      offering_types: ['Insurance', 'Bancassurance'],
+      aum_band: '5–20M',
+      risk_band: 'Conservative',
+      customer_tier: 'Platinum',
+      account_age_months: 42,
+      location: 'Silom',
+      product_recommendation: 'Bancassurance'
     },
     activity: {
-      last_login_days: 30,
-      page_views_30d: 3,
-      product_interactions: [],
+      last_login_days: 5,
+      page_views_30d: 18,
+      product_interactions: ['Insurance Calculator', 'Coverage Comparison', 'Agent Contact'],
       has_recent_transaction: false,
-      session_duration_avg: 2.1
+      session_duration_avg: 9.5
     },
     custom: {
-      marketing_segment: 'Acquisition',
-      campaign_tags: [],
-      custom_score: 32,
-      feature_flags: []
+      marketing_segment: 'Protection-Focused',
+      campaign_tags: ['Bancassurance', 'Family-Protection'],
+      custom_score: 82,
+      feature_flags: ['insurance-advisor', 'family-planning']
     }
   },
   {
     user_id: 'user_005',
-    name: 'Emma (Ultra High-Value, Multiple Products)',
+    name: 'Ploy (General User - Broadcast Only)',
     customer: {
-      targeted_lead: true,
-      offering_types: ['Investment', 'Insurance', 'Loan'],
-      aum_band: '20M+',
-      risk_band: 'Balanced',
-      customer_tier: 'Platinum',
-      account_age_months: 48
+      targeted_lead: false,
+      offering_types: ['Savings', 'Digital Banking'],
+      aum_band: '<1M',
+      risk_band: 'Conservative',
+      customer_tier: 'Silver',
+      account_age_months: 12,
+      location: 'Chatuchak'
     },
     activity: {
-      last_login_days: 1,
-      page_views_30d: 67,
-      product_interactions: ['Viewed Details', 'Added to Watchlist', 'Calculated Returns', 'Downloaded Brochure'],
+      last_login_days: 7,
+      page_views_30d: 8,
+      product_interactions: ['Balance Inquiry', 'Transfer Money'],
       has_recent_transaction: true,
-      session_duration_avg: 18.3
+      session_duration_avg: 4.2
     },
     custom: {
-      marketing_segment: 'High-Value',
-      campaign_tags: ['Q4-Promo', 'Wealth-Focus', 'Digital-First'],
-      custom_score: 98,
-      feature_flags: ['beta-features', 'premium-ui', 'advanced-analytics', 'mobile-enhanced']
+      marketing_segment: 'Mass-Market',
+      campaign_tags: ['Digital-Adoption', 'LINE-User'],
+      custom_score: 55,
+      feature_flags: ['line-integration', 'kplus-rewards']
     }
   }
 ];

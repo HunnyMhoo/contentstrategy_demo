@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import type { Rule } from '../lib/mockData';
 import { rulesApi } from '../services/rulesApi';
+import PreviewSection from '../features/rules/components/PreviewSection';
 
 const { Title } = Typography;
 
@@ -316,6 +317,9 @@ const RulesList: React.FC = () => {
           />
         </Spin>
       </Card>
+
+      {/* Preview Section */}
+      <PreviewSection rules={rules} />
       
       <style jsx>{`
         .rules-table .ant-table-thead > tr > th {

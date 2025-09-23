@@ -61,7 +61,7 @@ class RulesApiService {
 
       return {
         success: true,
-        data: data.rules ? { rules: data.rules, meta: data.meta } : data.rule,
+        data: data,
       };
     } catch (error) {
       return {
