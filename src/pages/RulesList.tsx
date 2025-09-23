@@ -1,66 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Table, Button, Tag, Space, Typography, Card } from 'antd';
 import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
+import { mockRules, type Rule } from '../lib/mockData';
 
 const { Title } = Typography;
-
-interface Rule {
-  id: string;
-  name: string;
-  status: 'Draft' | 'Active' | 'Inactive';
-  audienceSummary: string;
-  schedule: string;
-  lastModified: string;
-}
 
 const RulesList: React.FC = () => {
   const navigate = useNavigate();
 
-  // Mock data for demonstration
-  const mockRules: Rule[] = [
-    {
-      id: 'rule_001',
-      name: 'Show TL first',
-      status: 'Draft',
-      audienceSummary: 'Targeted Lead = true AND Risk Band in [Balanced, Aggressive]',
-      schedule: 'Daily 08:00-22:00 (Asia/Bangkok)',
-      lastModified: '2025-09-23 14:30',
-    },
-    {
-      id: 'rule_002',
-      name: 'High AUM Investment Focus',
-      status: 'Active',
-      audienceSummary: 'AUM Band = "5–20M" AND Offering Types includes "Investment"',
-      schedule: 'Weekdays 09:00-18:00 (Asia/Bangkok)',
-      lastModified: '2025-09-22 16:45',
-    },
-    {
-      id: 'rule_003',
-      name: 'Beginner Education Content',
-      status: 'Active',
-      audienceSummary: 'Persona = "Beginner" AND Last Click > 30 days',
-      schedule: 'Always Active',
-      lastModified: '2025-09-21 11:20',
-    },
-    {
-      id: 'rule_004',
-      name: 'Cautious Investor Savings',
-      status: 'Inactive',
-      audienceSummary: 'Risk Band = "Cautious" AND Offering Types includes "Savings"',
-      schedule: 'Weekends 10:00-20:00 (Asia/Bangkok)',
-      lastModified: '2025-09-20 09:15',
-    },
-    {
-      id: 'rule_005',
-      name: 'HNWI Premium Offers',
-      status: 'Draft',
-      audienceSummary: 'AUM Band = "20M+" AND Persona = "HNWI"',
-      schedule: 'Business Hours (Asia/Bangkok)',
-      lastModified: '2025-09-19 13:10',
-    },
-  ];
+  // Demo telemetry logging
+  const logDemoEvent = (eventName: string, data?: any) => {
+    console.log(`[Demo Event] ${eventName}`, data);
+  };
+
+  useEffect(() => {
+    logDemoEvent('rules_list_page_load', { rulesCount: mockRules.length });
+  }, []);
 
   const getStatusColor = (status: Rule['status']) => {
     switch (status) {
@@ -75,6 +32,37 @@ const RulesList: React.FC = () => {
     }
   };
 
+  const getContentSourceColor = (source: string) => {
+    switch (source) {
+      case 'TargetedLead':
+        return 'gold';
+      case 'ProductReco':
+        return 'blue';
+      case 'CMS':
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
+
+  const renderContentSources = (sources: string[]) => {
+    return (
+      <Space size="small" wrap>
+        {sources.map((source) => (
+          <Tag 
+            key={source} 
+            color={getContentSourceColor(source)}
+            className="text-xs"
+          >
+            {source === 'TargetedLead' ? 'Targeted Lead' : 
+             source === 'ProductReco' ? 'Product Reco' : 
+             'CMS'}
+          </Tag>
+        ))}
+      </Space>
+    );
+  };
+
   const columns: ColumnsType<Rule> = [
     {
       title: 'Rule Name',
@@ -85,7 +73,10 @@ const RulesList: React.FC = () => {
         <Button 
           type="link" 
           className="p-0 h-auto font-medium text-blue-600"
-          onClick={() => navigate(`/rules/${record.id}`)}
+          onClick={() => {
+            logDemoEvent('rule_list_click', { ruleId: record.id, ruleName: name });
+            navigate(`/rules/${record.id}`);
+          }}
         >
           {name}
         </Button>
@@ -108,6 +99,13 @@ const RulesList: React.FC = () => {
       render: (text) => (
         <span className="text-gray-600 text-sm">{text}</span>
       ),
+    },
+    {
+      title: 'Content Sources',
+      dataIndex: 'contentSources',
+      key: 'contentSources',
+      width: 180,
+      render: (sources) => renderContentSources(sources),
     },
     {
       title: 'Schedule',
@@ -137,14 +135,20 @@ const RulesList: React.FC = () => {
             type="text"
             icon={<EditOutlined />}
             size="small"
-            onClick={() => navigate(`/rules/${record.id}`)}
+            onClick={() => {
+              logDemoEvent('rule_edit_click', { ruleId: record.id });
+              navigate(`/rules/${record.id}`);
+            }}
             title="Edit Rule"
           />
           <Button
             type="text"
             icon={<CopyOutlined />}
             size="small"
-            onClick={() => console.log('Duplicate rule:', record.id)}
+            onClick={() => {
+              logDemoEvent('rule_duplicate_click', { ruleId: record.id });
+              console.log('Duplicate rule:', record.id);
+            }}
             title="Duplicate Rule"
           />
           <Button
@@ -152,7 +156,10 @@ const RulesList: React.FC = () => {
             icon={<DeleteOutlined />}
             size="small"
             danger
-            onClick={() => console.log('Delete rule:', record.id)}
+            onClick={() => {
+              logDemoEvent('rule_delete_click', { ruleId: record.id });
+              console.log('Delete rule:', record.id);
+            }}
             title="Delete Rule"
           />
         </Space>
@@ -161,8 +168,8 @@ const RulesList: React.FC = () => {
   ];
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
           <Title level={2} className="!mb-2">Rules</Title>
           <p className="text-gray-600 m-0">
@@ -173,8 +180,11 @@ const RulesList: React.FC = () => {
           type="primary"
           icon={<PlusOutlined />}
           size="large"
-          onClick={() => navigate('/rules/new')}
-          className="shadow-sm"
+          onClick={() => {
+            logDemoEvent('create_rule_click', { source: 'rules_list' });
+            navigate('/rules/new');
+          }}
+          className="shadow-sm sm:flex-shrink-0"
         >
           Create New Rule
         </Button>
@@ -192,7 +202,7 @@ const RulesList: React.FC = () => {
             showTotal: (total, range) =>
               `${range[0]}-${range[1]} of ${total} rules`,
           }}
-          scroll={{ x: 800 }}
+          scroll={{ x: 1000 }}
           className="ant-table-responsive"
         />
       </Card>
