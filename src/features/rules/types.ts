@@ -9,7 +9,7 @@ export interface AttributeDefinition {
   id: string;
   label: string;
   type: FieldType;
-  group: 'customer' | 'activity' | 'custom';
+  group: 'customer' | 'activity' | 'custom' | 'investment' | 'digital';
   options?: string[]; // For enum and multi-select types
   featured?: boolean; // For prominent display (e.g., Targeted Lead)
   description?: string;
@@ -54,6 +54,12 @@ export interface SampleUser {
     [key: string]: any;
   };
   activity: {
+    [key: string]: any;
+  };
+  investment: {
+    [key: string]: any;
+  };
+  digital: {
     [key: string]: any;
   };
   custom: {
@@ -122,7 +128,6 @@ export interface OfferingContentConfig {
 export interface ContentConfiguration {
   cms: CMSContentConfig;
   offering: OfferingContentConfig;
-  priority: number; // Rule priority for "Special for you" placement
   totalMaxYield: number; // Total tiles this rule can produce (1-5)
 }
 

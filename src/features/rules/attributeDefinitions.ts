@@ -106,6 +106,207 @@ export const ACTIVITY_ATTRIBUTES: AttributeDefinition[] = [
   }
 ];
 
+// Investment Behavior Attributes
+export const INVESTMENT_ATTRIBUTES: AttributeDefinition[] = [
+  {
+    id: 'investment_experience_level',
+    label: 'Investment Experience Level',
+    type: 'enum',
+    group: 'investment',
+    options: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
+    description: 'Customer\'s level of investment experience and knowledge'
+  },
+  {
+    id: 'investment_portfolio_holdings',
+    label: 'Investment Portfolio Holdings',
+    type: 'multi-select',
+    group: 'investment',
+    options: ['Stocks', 'Bonds', 'Mutual Funds', 'ETFs', 'Structured Products', 'Alternative Investments'],
+    description: 'Types of investment products currently held by customer'
+  },
+  {
+    id: 'investment_frequency',
+    label: 'Investment Frequency',
+    type: 'enum',
+    group: 'investment',
+    options: ['Never', 'Rarely', 'Monthly', 'Weekly', 'Daily'],
+    description: 'How frequently the customer makes investment transactions'
+  },
+  {
+    id: 'average_investment_amount',
+    label: 'Average Investment Amount',
+    type: 'enum',
+    group: 'investment',
+    options: ['<50K', '50K-200K', '200K-1M', '1M+'],
+    description: 'Typical amount invested per transaction'
+  },
+  {
+    id: 'investment_goal',
+    label: 'Investment Goal',
+    type: 'enum',
+    group: 'investment',
+    options: ['Wealth Preservation', 'Income Generation', 'Capital Growth', 'Speculation'],
+    description: 'Primary investment objective'
+  },
+  {
+    id: 'portfolio_diversification',
+    label: 'Portfolio Diversification',
+    type: 'enum',
+    group: 'investment',
+    options: ['Single Asset', 'Low Diversity', 'Moderate Diversity', 'High Diversity'],
+    description: 'Level of diversification in investment portfolio'
+  },
+  {
+    id: 'risk_tolerance_score',
+    label: 'Risk Tolerance Score',
+    type: 'number',
+    group: 'investment',
+    description: 'Numerical risk tolerance score (0-100, higher = more risk tolerant)'
+  },
+  {
+    id: 'market_volatility_reaction',
+    label: 'Market Volatility Reaction',
+    type: 'enum',
+    group: 'investment',
+    options: ['Panic Seller', 'Cautious', 'Neutral', 'Opportunistic'],
+    description: 'How customer typically reacts to market volatility'
+  },
+  {
+    id: 'esg_investment_interest',
+    label: 'ESG Investment Interest',
+    type: 'boolean',
+    group: 'investment',
+    description: 'Interest in Environmental, Social, and Governance (ESG) investments'
+  },
+  {
+    id: 'cryptocurrency_interest',
+    label: 'Cryptocurrency Interest',
+    type: 'enum',
+    group: 'investment',
+    options: ['Not Interested', 'Curious', 'Active Trader'],
+    description: 'Level of interest in cryptocurrency investments'
+  }
+];
+
+// Digital Journey Attributes
+export const DIGITAL_ATTRIBUTES: AttributeDefinition[] = [
+  {
+    id: 'digital_adoption_stage',
+    label: 'Digital Adoption Stage',
+    type: 'enum',
+    group: 'digital',
+    options: ['Digital Beginner', 'Growing Confidence', 'Digital Native', 'Power User'],
+    description: 'Customer\'s comfort level with digital banking services'
+  },
+  {
+    id: 'channel_preference',
+    label: 'Channel Preference',
+    type: 'enum',
+    group: 'digital',
+    options: ['Branch Only', 'Hybrid', 'Digital Preferred', 'Digital Only'],
+    description: 'Preferred channel for banking interactions'
+  },
+  {
+    id: 'mobile_app_usage_intensity',
+    label: 'Mobile App Usage Intensity',
+    type: 'enum',
+    group: 'digital',
+    options: ['Never', 'Light', 'Moderate', 'Heavy'],
+    description: 'Frequency and depth of mobile app usage'
+  },
+  {
+    id: 'feature_discovery_rate',
+    label: 'Feature Discovery Rate',
+    type: 'number',
+    group: 'digital',
+    description: 'Rate at which customer discovers and adopts new features (0-100)'
+  },
+  {
+    id: 'digital_transaction_comfort',
+    label: 'Digital Transaction Comfort',
+    type: 'enum',
+    group: 'digital',
+    options: ['Cash Only', 'Basic Digital', 'Advanced Digital', 'All Digital'],
+    description: 'Comfort level with different types of digital transactions'
+  },
+  {
+    id: 'self_service_preference',
+    label: 'Self-Service Preference',
+    type: 'boolean',
+    group: 'digital',
+    description: 'Prefers self-service options over human assistance'
+  },
+  {
+    id: 'educational_content_engagement',
+    label: 'Educational Content Engagement',
+    type: 'enum',
+    group: 'digital',
+    options: ['Skips All', 'Occasional', 'Regular', 'Enthusiast'],
+    description: 'Level of engagement with educational content'
+  },
+  {
+    id: 'device_usage_pattern',
+    label: 'Device Usage Pattern',
+    type: 'enum',
+    group: 'digital',
+    options: ['Mobile Only', 'Desktop Only', 'Multi-Device'],
+    description: 'Primary devices used for banking'
+  },
+  {
+    id: 'digital_onboarding_completion_rate',
+    label: 'Digital Onboarding Completion Rate',
+    type: 'number',
+    group: 'digital',
+    description: 'Percentage of digital onboarding steps completed (0-100)'
+  },
+  {
+    id: 'notification_responsiveness',
+    label: 'Notification Responsiveness',
+    type: 'enum',
+    group: 'digital',
+    options: ['Ignores', 'Selective', 'Responsive', 'Immediate'],
+    description: 'How quickly and frequently customer responds to notifications'
+  },
+  {
+    id: 'digital_security_awareness',
+    label: 'Digital Security Awareness',
+    type: 'enum',
+    group: 'digital',
+    options: ['Basic', 'Moderate', 'Advanced'],
+    description: 'Level of awareness about digital security practices'
+  },
+  {
+    id: 'customer_lifecycle_stage',
+    label: 'Customer Lifecycle Stage',
+    type: 'enum',
+    group: 'digital',
+    options: ['Prospect', 'New Customer', 'Growing', 'Mature', 'At Risk', 'Win-back'],
+    description: 'Current stage in the customer lifecycle'
+  },
+  {
+    id: 'product_adoption_journey',
+    label: 'Product Adoption Journey',
+    type: 'enum',
+    group: 'digital',
+    options: ['Awareness', 'Consideration', 'Trial', 'Adoption', 'Advocacy'],
+    description: 'Current stage in product adoption process'
+  },
+  {
+    id: 'last_product_purchase_days',
+    label: 'Days Since Last Product Purchase',
+    type: 'number',
+    group: 'digital',
+    description: 'Number of days since customer last purchased a new product'
+  },
+  {
+    id: 'cross_sell_readiness_score',
+    label: 'Cross-sell Readiness Score',
+    type: 'number',
+    group: 'digital',
+    description: 'Predictive score for cross-selling additional products (0-100)'
+  }
+];
+
 // Custom Data Attributes
 export const CUSTOM_ATTRIBUTES: AttributeDefinition[] = [
   {
@@ -145,6 +346,8 @@ export const CUSTOM_ATTRIBUTES: AttributeDefinition[] = [
 export const ALL_ATTRIBUTES: AttributeDefinition[] = [
   ...CUSTOMER_ATTRIBUTES,
   ...ACTIVITY_ATTRIBUTES,
+  ...INVESTMENT_ATTRIBUTES,
+  ...DIGITAL_ATTRIBUTES,
   ...CUSTOM_ATTRIBUTES
 ];
 
@@ -154,7 +357,7 @@ export const getAttributeById = (id: string): AttributeDefinition | undefined =>
 };
 
 // Helper function to get attributes by group
-export const getAttributesByGroup = (group: 'customer' | 'activity' | 'custom'): AttributeDefinition[] => {
+export const getAttributesByGroup = (group: 'customer' | 'activity' | 'custom' | 'investment' | 'digital'): AttributeDefinition[] => {
   return ALL_ATTRIBUTES.filter(attr => attr.group === group);
 };
 

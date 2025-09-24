@@ -91,8 +91,10 @@ const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({
   // Get all available attributes grouped by category
   const customerAttributes = getAttributesByGroup('customer');
   const activityAttributes = getAttributesByGroup('activity');
+  const investmentAttributes = getAttributesByGroup('investment');
+  const digitalAttributes = getAttributesByGroup('digital');
   const customAttributes = getAttributesByGroup('custom');
-  const allAttributes = [...customerAttributes, ...activityAttributes, ...customAttributes];
+  const allAttributes = [...customerAttributes, ...activityAttributes, ...investmentAttributes, ...digitalAttributes, ...customAttributes];
   
   console.log('ImprovedConditionBuilder render - current conditions:', conditions);
 
@@ -343,6 +345,20 @@ const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({
                 </Select.Option>
               ))}
             </Select.OptGroup>
+            <Select.OptGroup label="Investment Behavior">
+              {investmentAttributes.map(attr => (
+                <Select.Option key={attr.id} value={attr.id} label={attr.label}>
+                  {attr.label}
+                </Select.Option>
+              ))}
+            </Select.OptGroup>
+            <Select.OptGroup label="Digital Journey">
+              {digitalAttributes.map(attr => (
+                <Select.Option key={attr.id} value={attr.id} label={attr.label}>
+                  {attr.label}
+                </Select.Option>
+              ))}
+            </Select.OptGroup>
             <Select.OptGroup label="Custom Data">
               {customAttributes.map(attr => (
                 <Select.Option key={attr.id} value={attr.id} label={attr.label}>
@@ -476,16 +492,6 @@ const ImprovedConditionBuilder: React.FC<ImprovedConditionBuilderProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Who should see this content?
-        </h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Build your audience by selecting attributes, operators, and values. Chain conditions with AND/OR logic.
-        </p>
-      </div>
-
       {/* Condition Builder Interface */}
       <Card title="🎯 Audience Conditions" className="mb-6">
         <div className="space-y-4">
