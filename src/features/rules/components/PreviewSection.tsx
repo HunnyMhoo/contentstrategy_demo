@@ -94,25 +94,30 @@ const PreviewSection: React.FC<PreviewSectionProps> = ({ rules }) => {
     let finalContent = null;
     if (matchedRules.length > 0) {
       const topRule = matchedRules[0].rule;
-      const primarySource = topRule.contentSources[0];
       
-      // Generate Kasikornbank content based on rule type
+      // Determine source based on rule type
+      let primarySource = '';
       let template = '';
       let renderedContent = '';
       
       if (topRule.name === 'Location-Based Credit Card Promotion') {
+        primarySource = 'LocationBased';
         template = 'K-Credit Card Special Offer\nGet 5% cashback at shopping malls\nApply now with instant approval';
         renderedContent = 'K-Credit Card Special Offer\nGet 5% cashback at shopping malls\nApply now with instant approval';
       } else if (topRule.name === 'Express Loan for Targeted Leads') {
+        primarySource = 'TargetedLead';
         template = 'K-Express Loan\nGet loan approval in 15 minutes\nUp to 5 million baht, competitive rates';
         renderedContent = 'K-Express Loan\nGet loan approval in 15 minutes\nUp to 5 million baht, competitive rates';
       } else if (topRule.name === 'Mutual Fund Recommendation') {
+        primarySource = 'ProductReco';
         template = 'K-Fund Plus\nDiversified mutual fund portfolio\n8-12% expected annual return';
         renderedContent = 'K-Fund Plus\nDiversified mutual fund portfolio\n8-12% expected annual return';
       } else if (topRule.name === 'Bancassurance Recommendation') {
+        primarySource = 'ProductReco';
         template = 'K-Protect Life Insurance\nComprehensive coverage with investment\nStarting from 2,500 baht/month';
         renderedContent = 'K-Protect Life Insurance\nComprehensive coverage with investment\nStarting from 2,500 baht/month';
       } else if (topRule.name === 'LINE BC Register - Broadcast Campaign') {
+        primarySource = 'Broadcast';
         template = 'LINE BK Register\nSign up for LINE BK and get 500 K-Points\nEasy banking on LINE app';
         renderedContent = 'LINE BK Register\nSign up for LINE BK and get 500 K-Points\nEasy banking on LINE app';
       }

@@ -3,7 +3,7 @@
     {
       "id": "550e8400-e29b-41d4-a716-446655440001",
       "name": "Location-Based Credit Card Promotion",
-      "status": "Draft",
+      "status": "Active",
       "audienceSummary": "AUM Band = 1–5M AND Marketing Segment = Growth AND Location is one of Shopping Area AND Distance to Mall < 500",
       "contentSources": [],
       "contentFiles": [
@@ -65,7 +65,7 @@
       "content": null,
       "fallback": null,
       "createdAt": "2025-09-23T08:30:00Z",
-      "updatedAt": "2025-09-23T13:17:53.094Z"
+      "updatedAt": "2025-09-24T01:20:02.369Z"
     },
     {
       "id": "550e8400-e29b-41d4-a716-446655440002",
@@ -263,6 +263,6 @@
   "meta": {
     "lastId": 8,
     "version": "1.0",
-    "updatedAt": "2025-09-23T13:17:53.094Z"
+    "updatedAt": "2025-09-24T01:20:02.369Z"
   }
 }

@@ -23,7 +23,7 @@ export const SAMPLE_USERS: SampleUser[] = [
       session_duration_avg: 8.5
     },
     custom: {
-      marketing_segment: 'Location-Based',
+      marketing_segment: 'Growth',
       campaign_tags: ['Shopping-Promo', 'Credit-Card'],
       custom_score: 85,
       feature_flags: ['location-services', 'push-notifications']
