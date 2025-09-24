@@ -47,7 +47,7 @@ const RuleEditor: React.FC = () => {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [loading, setLoading] = useState(!isNewRule);
   const [saving, setSaving] = useState(false);
-  const [useImprovedUX] = useState(true); // Always use improved UX
+  const [_useImprovedUX] = useState(true); // Always use improved UX
   const [audienceValidation, setAudienceValidation] = useState<ValidationResult>({ isValid: false, errors: [], warnings: [] });
   const [contentValidation, setContentValidation] = useState<ContentValidationResult>({ isValid: false, errors: [], warnings: [], hasContent: false, priorityConflicts: [] });
   const [fallbackValidation, setFallbackValidation] = useState<FallbackValidationResult>({ isValid: false, errors: [], warnings: [], hasFallbacks: false, scenarioErrors: { ineligible_audience: [], empty_supply: [] } });
@@ -356,16 +356,7 @@ const RuleEditor: React.FC = () => {
     message.success('Simulation ready - preview updated with current rule configuration');
   };
 
-  // Handle audience condition changes
-  const handleAudienceChange = (condition: AudienceCondition) => {
-    setRuleData(prev => ({ ...prev, audience: condition }));
-    setHasUnsavedChanges(true);
-  };
-
-  // Handle audience validation changes
-  const handleAudienceValidationChange = (validation: ValidationResult) => {
-    setAudienceValidation(validation);
-  };
+  // Audience handlers removed - using direct state updates in components
 
   const handleContentChange = (content: ContentConfigurationType) => {
     setRuleData(prev => ({ ...prev, content }));

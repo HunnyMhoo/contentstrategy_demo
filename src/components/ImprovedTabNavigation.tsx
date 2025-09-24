@@ -88,9 +88,9 @@ const ImprovedTabNavigation: React.FC<ImprovedTabNavigationProps> = ({
         {/* Interactive Steps */}
         <Steps
           current={currentStepIndex}
-          onChange={onTabChange}
+          onChange={(current) => onTabChange(current.toString())}
           className="cursor-pointer"
-          items={steps.map((step, index) => ({
+          items={steps.map((step, _index) => ({
             title: (
               <div className="flex items-center space-x-2">
                 <span className="text-lg">{step.icon}</span>
@@ -139,7 +139,7 @@ const ImprovedTabNavigation: React.FC<ImprovedTabNavigationProps> = ({
 };
 
 // Helper functions
-function getStepStatus(tabKey: string, validation: string): 'wait' | 'process' | 'finish' | 'error' {
+function getStepStatus(_tabKey: string, validation: string): 'wait' | 'process' | 'finish' | 'error' {
   switch (validation) {
     case 'valid': return 'finish';
     case 'error': return 'error';

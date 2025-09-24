@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Drawer, Button, Card, Steps, Tag, Space } from 'antd';
+import { Drawer, Button, Card, Tag, Space } from 'antd';
 import { QuestionCircleOutlined, PlayCircleOutlined, BookOutlined } from '@ant-design/icons';
 
 interface ContextualHelpProps {
@@ -137,13 +137,13 @@ const ContextualHelp: React.FC<ContextualHelpProps> = ({ currentTab }) => {
                       )}
                     </div>
                     <p className="text-sm text-gray-600">
-                      {example.description}
+                      {(example as any).description || (example as any).setup || (example as any).expected || ''}
                     </p>
                     {(example as any).conditions && (
                       <div className="space-y-1">
                         {(example as any).conditions.map((condition: string, i: number) => (
                           <div key={i} className="flex items-center space-x-2">
-                            {i > 0 && <Tag size="small">AND</Tag>}
+                            {i > 0 && <Tag>AND</Tag>}
                             <code className="bg-gray-100 px-2 py-1 rounded text-xs">
                               {condition}
                             </code>
